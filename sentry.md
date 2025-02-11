@@ -144,6 +144,7 @@ Sentry.addBreadcrumb({
 Example A Created Function
 ```ts
 
+
 const integration = {
     name: 'CustomIntegration',
     setupOnce() {
