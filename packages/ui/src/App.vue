@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import HelloWorld from './components/HelloWorld.vue'
-import { Button } from '@mono/ui';
-import { add } from '@mono/utils';
 </script>
 
 <template>
@@ -13,9 +11,7 @@ import { add } from '@mono/utils';
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-    <HelloWorld msg="Vite + Vue + memo" >
-    </HelloWorld>
-    <Button>我是monorepo插件{{ add(10, 10) }}</Button>
+  <HelloWorld msg="Vite + Vue" />
 </template>
 
 <style scoped>
