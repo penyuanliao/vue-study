@@ -42,3 +42,12 @@ pnpm i -D typescript --filter utils
 pnpm add "@mono/ui@workspace:*" -r
 pnpm add "@mono/utils@workspace:*" -r
 ````
+
+
+````
+project-folder
+├── doc 文件
+├── web 專案目錄
+├── packages 共用目錄
+└── package.json npm參數設定
+````
