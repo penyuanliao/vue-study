@@ -1,7 +1,13 @@
 import Button from "./src/components/Button.vue";
-import Dropdown from "./src/components/Dropdown/Dropdown.vue";
+import Dropdown from "./src/components/dropdown/Dropdown.vue";
 import DarkMode from "./src/components/DarkMode.vue";
-import Login from "./src/components/Login/Login.vue";
-import Simple from "./src/components/Breadcrumbs/Simple.vue";
+import Login from "./src/components/login/Login.vue";
+import Simple from "./src/components/breadcrumbs/Simple.vue";
+import ImgIcon from "./src/components/shared/ImgIcon.vue";
+import LoadingBase from "./src/components/loading/LoadingBase.vue";
+import ErrorComponent from "./src/components/ErrorComponent.vue";
+import EditTable from './src/components/tables/EditTable.vue';
+import icon, { type IconTypes } from "./src/components/icons/Icon.vue";
 const Breadcrumbs = { Simple };
-export { Button, Dropdown, DarkMode, Login, Breadcrumbs };
+export { Button, Dropdown, DarkMode, Login, Breadcrumbs, LoadingBase, ErrorComponent, EditTable, ImgIcon, icon, type IconTypes };
+

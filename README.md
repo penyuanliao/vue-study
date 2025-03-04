@@ -51,3 +51,9 @@ project-folder
 ├── packages 共用目錄
 └── package.json npm參數設定
 ````
+
+
+### History
+***
+
+2025/02/17 增加 pinia, daisyui, vue-router
