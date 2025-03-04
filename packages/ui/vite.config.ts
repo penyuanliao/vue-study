@@ -10,7 +10,10 @@ export default defineConfig({
   plugins: [vue(), vueJSX(), tailwindcss()],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src"), import.meta.url),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     }
+  },
+  server: {
+    port: 8080
   }
 });
