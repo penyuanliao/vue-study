@@ -71,7 +71,7 @@ const isOpen = ref(false);
         <!-- Mobile Menu open: "block", Menu closed: "hidden" -->
         <div
           :class="[isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0']"
-          class="absolute inset-x-0 z-20 w-full bg-white px-6 py-4 transition-all duration-300 ease-in-out md:relative md:top-0 md:mt-0 md:flex md:w-auto md:translate-x-0 md:items-center md:bg-transparent md:p-0 md:opacity-100 dark:bg-gray-800"
+          class="absolute inset-x-0 w-full bg-white px-6 py-4 transition-all duration-300 ease-in-out md:relative md:top-0 md:mt-0 md:flex md:w-auto md:translate-x-0 md:items-center md:bg-transparent md:p-0 md:opacity-100 dark:bg-gray-800"
         >
           <div :class="isOpen ? 'flex' : 'hidden'" class="flex-col md:mx-6 md:flex md:flex-row">
             <RouterLink class="navbar-item" v-for="link in navLinks" :to="{ path: link.path }">
@@ -102,7 +102,9 @@ const isOpen = ref(false);
   </header>
 </template>
 
-<style scoped lang="postcss">
+<style scoped>
+@reference "@/style.css";
+
 .navbar-item {
   @apply my-2 transform text-gray-700 transition-colors duration-300 hover:text-blue-500 md:mx-4 md:my-0 dark:text-gray-200 dark:hover:text-blue-400;
 }

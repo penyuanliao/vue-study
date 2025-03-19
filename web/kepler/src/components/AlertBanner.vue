@@ -119,7 +119,10 @@ const type: Record<string, IInfo> = {
   </teleport>
 </template>
 
-<style scoped lang="postcss">
+<style scoped>
+.alert-container {
+  z-index: 10;
+}
 /*
 .slide-down-enter-active {
   transition: all 0.3s ease-out;

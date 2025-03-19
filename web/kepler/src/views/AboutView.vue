@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AlertBanner from "@/components/AlertBanner.vue";
 import { ref } from "vue";
+import { ButtonGroupIcon } from "@mono/ui";
 const isAlertVisible = ref(false);
 
 const showAlert = () => {
@@ -11,6 +12,7 @@ const showAlert = () => {
 
 <template>
   <div>
+    <ButtonGroupIcon></ButtonGroupIcon>
     <button class="btn" @click="showAlert">警告Alert Banner</button>
     <AlertBanner
       v-model="isAlertVisible"

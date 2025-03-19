@@ -8,6 +8,10 @@ import LoadingBase from "./src/components/loading/LoadingBase.vue";
 import ErrorComponent from "./src/components/ErrorComponent.vue";
 import EditTable from './src/components/tables/EditTable.vue';
 import icon, { type IconTypes } from "./src/components/icons/Icon.vue";
+import ButtonGroupIcon from './src/components/button/ButtonGroupIcon.vue'
+import SidebarCollapse from './src/components/sidebar/SidebarCollapse.vue'
 const Breadcrumbs = { Simple };
-export { Button, Dropdown, DarkMode, Login, Breadcrumbs, LoadingBase, ErrorComponent, EditTable, ImgIcon, icon, type IconTypes };
+export { Button, Dropdown, DarkMode, Login, Breadcrumbs, LoadingBase, ErrorComponent, EditTable, ImgIcon, icon, type IconTypes,
+  ButtonGroupIcon, SidebarCollapse,
+};
 
