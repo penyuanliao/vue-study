@@ -1,73 +1,94 @@
-<template>
-  <div class="relative inline-block">
-    <!-- Index toggle button -->
-    <button
-      @click="isOpen = !isOpen"
-      class="relative z-10 block p-2 text-gray-700 bg-white border border-transparent rounded-md dark:text-white focus:border-blue-500 focus:ring-opacity-40 dark:focus:ring-opacity-40 focus:ring-blue-300 dark:focus:ring-blue-400 focus:ring dark:bg-gray-800 focus:outline-none"
-    >
-      <svg
-        class="w-5 h-5 text-gray-800 dark:text-white"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fill-rule="evenodd"
-          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-          clip-rule="evenodd"
-        />
-      </svg>
-    </button>
+<script setup lang="ts">
+import { ref } from "vue";
 
-    <!-- Index menu -->
-    <Transition
-      enter-active-class="transition ease-out duration-100"
-      enter-from-class="opacity-0 scale-90"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition ease-in duration-100"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-90"
-    >
-      <div
-        v-show="isOpen"
-        ref="dropdownMenu"
-        class="absolute right-0 z-20 w-48 py-2 mt-2 origin-top-right bg-white rounded-md shadow-xl dark:bg-gray-800"
-      >
-        <a
-          href="#"
-          class="block px-4 py-3 text-sm text-gray-600 capitalize transition-colors duration-300 transform dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white"
-        >Your Profile</a
-        >
-        <a
-          href="#"
-          class="block px-4 py-3 text-sm text-gray-600 capitalize transition-colors duration-300 transform dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white"
-        >Your Projects</a
-        >
-        <a
-          href="#"
-          class="block px-4 py-3 text-sm text-gray-600 capitalize transition-colors duration-300 transform dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white"
-        >Help</a
-        >
-        <a
-          href="#"
-          class="block px-4 py-3 text-sm text-gray-600 capitalize transition-colors duration-300 transform dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white"
-        >Settings</a
-        >
-        <a
-          href="#"
-          class="block px-4 py-3 text-sm text-gray-600 capitalize transition-colors duration-300 transform dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white"
-        >Sign Out</a
-        >
-      </div>
-    </Transition>
+export interface IDropdownProps {
+  label?: string,
+  icon?: string,
+  items: {
+    label: string,
+    path: string
+  }[]
+}
+
+defineProps<IDropdownProps>();
+
+const isVisible = ref(false);
+
+</script>
+
+<template>
+  <div @click="isVisible = !isVisible">
+    <div class="p-1.5 mt-5 cursor-pointer text-gray-600 transition-colors duration-300 transform rounded-md dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-200 hover:text-gray-700 lg:flex lg:items-center lg:px-4 lg:py-2 lg:mt-5">
+      <div class="w-6 h-6" v-if="icon" v-html="icon"></div>
+      <svg class="w-6 h-6 text-gray-600 transition-colors duration-300 transform rounded-md dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-200 hover:text-gray-700" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
+      </svg>
+      <span class="flex-1 text-left mx-4 font-medium hidden lg:inline">{{ label }}</span>
+      <svg :class="['w-6 h-6', isVisible ? 'is-rotated' : 'not-rotated']"
+           aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+      </svg>
+
+    </div>
   </div>
+
+  <transition name="dropdown-fade">
+    <ul
+      v-show="isVisible"
+      class="py-2 space-y-2">
+      <li
+        v-for="(item, index) in items"
+        :key="index"
+      >
+        <a :href="item.path"
+           class="flex items-center
+           p-2 pl-11
+           w-full text-base font-normal
+           rounded-lg
+           transition duration-75
+         text-gray-900 hover:bg-gray-100
+         dark:text-white dark:hover:bg-gray-700">
+          {{item.label}}
+        </a>
+      </li>
+    </ul>
+  </transition>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
+<style scoped>
+.dropdown-fade-enter-active {
+  transition: all .2s ease-out;
+}
+.dropdown-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  transform: translateY(20px);
+  opacity: 0;
+}
 
-const isOpen = ref(false);
+.not-rotated {
+  animation: rotate-anim-0 0.3s forwards 1;
+}
+.is-rotated {
+  animation: rotate-anim-180 0.3s forwards 1;
+}
 
-// 監聽點擊外部來關閉下拉選單
-const dropdownMenu = ref(null);
-</script>
+@keyframes rotate-anim-180 {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-180deg);
+  }
+}
+@keyframes rotate-anim-0 {
+  0% {
+    transform: rotate(-180deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+</style>
