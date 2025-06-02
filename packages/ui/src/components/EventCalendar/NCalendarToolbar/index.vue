@@ -2,33 +2,46 @@
 import { computed, defineComponent } from 'vue';
 
 export default defineComponent({
-    name: 'EventCalendarToolbar',
+    name: 'NEventCalendarToolbar',
     props: {
-        someday: {
+        dateBeforeLast: {
+            type: Date,
+            required: false
+        },
+        prevDate: {
+            type: Date,
+            required: false
+        },
+        currentDate: {
             type: Date,
             required: true
+        },
+        nextDate: {
+            type: Date,
+            required: false
         }
     },
+    emits: ['click'],
     setup(props) {
         const twoMonthAgo = computed(() => {
-            const day = new Date(props.someday);
+            const day = props.dateBeforeLast || new Date(props.currentDate);
             day.setMonth(day.getMonth() - 2);
             return day;
         });
         const lastMonth = computed(() => {
-            const day = new Date(props.someday);
+            const day = props.nextDate || new Date(props.currentDate);
             day.setMonth(day.getMonth() - 1);
             return day;
         });
-        const thisMonth = computed(() => {
-            return new Date(props.someday);
-        });
+        const thisMonth = computed(() => new Date(props.currentDate));
+
         const nextMonth = computed(() => {
-            const day = new Date(props.someday);
+            const day = props.nextDate || new Date(props.currentDate);
             day.setMonth(day.getMonth() + 1);
             return day;
         });
         const padStart = (value: number) => value.toString().padStart(2, '0');
+
         return {
             lastMonth,
             twoMonthAgo,
@@ -36,6 +49,11 @@ export default defineComponent({
             nextMonth,
             padStart
         };
+    },
+    methods: {
+        onClickHandle(th: string) {
+            this.$emit('click', th);
+        }
     }
 });
 </script>
@@ -43,22 +61,34 @@ export default defineComponent({
 <template>
     <div class="tool-bar-container">
         <div class="line-1" />
-        <div class="calendar-th">
+        <div
+            class="calendar-th"
+            @click="onClickHandle(`${twoMonthAgo.getFullYear()}/${padStart(twoMonthAgo.getMonth() + 1)}`)"
+        >
             <div class="month-name">{{ padStart(twoMonthAgo.getMonth() + 1) }}</div>
             <div class="year-digits">{{ twoMonthAgo.getFullYear() }}</div>
         </div>
         <div class="divider"/>
-        <div class="calendar-th">
+        <div
+            class="calendar-th"
+            @click="onClickHandle(`${lastMonth.getFullYear()}/${padStart(lastMonth.getMonth() + 1)}`)"
+        >
             <div class="month-name">{{ padStart(lastMonth.getMonth() + 1) }}</div>
             <div class="year-digits">{{ lastMonth.getFullYear() }}</div>
         </div>
         <div class="divider"/>
-        <div class="calendar-th active">
+        <div
+            class="calendar-th"
+            @click="onClickHandle(`${thisMonth.getFullYear()}/${padStart(thisMonth.getMonth() + 1)}`)"
+        >
             <div class="month-name">{{ padStart(thisMonth.getMonth() + 1) }}</div>
             <div class="year-digits">{{ thisMonth.getFullYear() }}</div>
         </div>
         <div class="divider"/>
-        <div class="calendar-th">
+        <div
+            class="calendar-th"
+            @click="onClickHandle(`${nextMonth.getFullYear()}/${padStart(nextMonth.getMonth() + 1)}`)"
+        >
             <div class="month-name">{{ padStart(nextMonth.getMonth() + 1) }}</div>
             <div class="year-digits">{{ nextMonth.getFullYear() }}</div>
         </div>
@@ -66,9 +96,14 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
+@use '../theme';
+
 .tool-bar-container {
-    width: 770px;
     height: 85px;
+    width: 100%;
+    max-width: 770px;
+    min-width: 390px;
+    margin: 0 auto;
     position: relative;
     display: flex;
     flex-direction: row;
@@ -96,6 +131,7 @@ export default defineComponent({
         flex-direction: column;
         text-align: center;
         color: #DFDFDF;
+        &:active,
         &.active {
             color: #F15624;
         }
@@ -116,9 +152,11 @@ export default defineComponent({
         }
     }
     .divider {
-        width: 117px;
+        flex: 1 1 0;
         height: 1px;
-        background: #DFDFDF
+        min-width: 24px;
+        max-width: 117px;
+        background: #DFDFDF;
     }
 
 }
