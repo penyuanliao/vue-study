@@ -13,27 +13,93 @@ export default defineComponent({
         },
         activeDate: {
             type: Date,
-            default: new Date('2025/01/05')
+            default: new Date('2024/07')
+        },
+        events: {
+            type: Array,
+            default: () => []
+        },
+        selected: {
+            type: Boolean,
+            default: false
         }
     },
     setup(props) {
-        const activeDate = new Date('2025/04/05');
-        const dayOfWeek = activeDate.getDay();
-        const daily = activeDate.getDate();
-        const daysInMonth = new Date(activeDate.getFullYear(), activeDate.getMonth() + 1, 0).getDate();
-        const nextMonth = new Date(activeDate.getFullYear(), activeDate.getMonth() + 2, 0).getDate();
+
+        const currentDate = new Date('2024/08/12'); // 今天
+        const dayOfWeek = currentDate.getDay();
+        const daily = currentDate.getDate();
+        const daysInMonth = new Date(props.activeDate.getFullYear(), props.activeDate.getMonth() + 1, 0).getDate();
+        const nextMonth = new Date(props.activeDate.getFullYear(), props.activeDate.getMonth() + 2, 0).getDate();
         // 這個月的第一天是星期幾
-        const firstDayOfMonth = new Date(activeDate.getFullYear(), activeDate.getMonth(), 1).getDay();
+        const firstDayOfMonth = new Date(props.activeDate.getFullYear(), props.activeDate.getMonth(), 1).getDay();
         const isWeekend = (day: number): boolean => ((firstDayOfMonth + (day - 1)) % 7 % 6) === 0;
 
         const hasSmall = computed(() => props.gridType === 'small');
+        // 檢查活動是否開始
+        const isContinued = (startTime: string) => {
+            const time = new Date(startTime);
+            return (time.getMonth() !== props.activeDate.getMonth());
+        };
+        const isContinuing = (endedTime: string) => {
+            const time = new Date(endedTime);
+            return (time.getMonth() !== props.activeDate.getMonth());
+        }
+        // 活動開始位置
+        const eventStartOffset = (startTime: string):number => {
+            const time = new Date(startTime);
+            if ((time.getFullYear() < props.activeDate.getFullYear())
+                || (time.getMonth() < props.activeDate.getMonth())) {
+                return 1;
+            }
+            return time.getDate();
+        }
+        // 活動結束位置
+        const eventEndedOffset = (startTime: string, endedTime: string): number => {
+            const start = new Date(startTime);
+            const ended = new Date(endedTime);
+            if ((ended.getFullYear() > props.activeDate.getFullYear())
+                || (ended.getMonth() > props.activeDate.getMonth())) {
+                return daysInMonth + 1;
+            }
+            const startDay: number = start.getMonth() !== props.activeDate.getMonth() ? 0 : start.getDate() - 1;
+            const space = (ended.getDate() - startDay) + 1;
+            return Math.max(space, 2);
+        }
+        const gridColumn = (startTime: string, endedTime: string): string => {
+            const start = new Date(startTime);
+            const ended = new Date(endedTime);
+            let space: number;
+            let offset: number;
+            if ((start.getFullYear() < props.activeDate.getFullYear())
+                || (start.getMonth() < props.activeDate.getMonth())) {
+                offset = 1;
+            } else {
+                offset = start.getDate();
+            }
+            if ((ended.getFullYear() > props.activeDate.getFullYear())
+                || (ended.getMonth() > props.activeDate.getMonth())) {
+                space = daysInMonth + 1;
+            } else {
+                const startDay: number = start.getMonth() !== props.activeDate.getMonth() ? 0 : start.getDate() - 1;
+                space = (ended.getDate() - startDay) + 1;
+            }
+
+            return `${offset} / span ${space}`;
+        }
 
         return {
+            currentDate,
             daily,
             daysInMonth,
             nextMonth,
             isWeekend,
-            hasSmall
+            hasSmall,
+            isContinued,
+            isContinuing,
+            eventStartOffset,
+            eventEndedOffset,
+            gridColumn
         };
     }
 });
@@ -41,6 +107,7 @@ export default defineComponent({
 
 <template>
     <div class="calendar-content">
+        <!-- 日曆標題 -->
         <div class="calendar-title">
             <div class="daily-timeline">
                 <div
@@ -48,7 +115,7 @@ export default defineComponent({
                     :key="i"
                     :class="{
                         weekend: isWeekend(i),
-                        active: i === daily
+                        active: i === daily && currentDate.getMonth() === activeDate.getMonth() && selected
                     }"
                 >
                     {{ i.toString().padStart(2, '0') }}
@@ -65,30 +132,71 @@ export default defineComponent({
                 </div>
             </div>
         </div>
-        <div class="calendar-wrap">
+        <!-- 日曆內容 -->
+        <div class="calendar-wrap column">
             <div
+                v-if="selected && currentDate.getMonth() === activeDate.getMonth()"
                 class="current-line"
                 :style="{
-                    left: `calc(var(--daily-timeline-width) * ${daily} - 1px)`
+                    left: `calc(var(--daily-timeline-width) * ${daily} - 1px)`,
                 }"
             />
-            <div class="grid-content">
+            <div style="display: none;" class="grid-content">
                 <div
-                    class="item continued"
+                    v-for="(event, i) in events"
+                    :key="i"
+                    class="item"
                     :class="{
-                        'item-small': hasSmall
+                        'continued': isContinued(event.startTime),
+                        'continuing': isContinuing(event.endedTime),
+                        'hot': event.hot,
+                        'item-small': hasSmall,
+                        'icon': eventEndedOffset(event.startTime, event.endedTime) <= 3
+                    }"
+                    :style="{
+                        'display': event.calendar.checked ? 'block' : 'none',
+                        'grid-column': `${gridColumn(event.startTime, event.endedTime)}`,
+                        'grid-row': i + 1,
+                        'background': `${event.color}`
                     }"
                 >
                     <EventTitle
-                        title="PG电子"
-                        startTime="2024/12/15"
-                        endedTime="2025/01/08"
-                        eventDesc="PG新春金喜盲盒开运奖上奖"
+                        v-if="eventEndedOffset(event.startTime, event.endedTime) > 3"
+                        :title="event.title"
+                        :startTime="event.startTime"
+                        :endedTime="event.endedTime"
+                        :eventDesc="event.eventDesc"
                         :small="hasSmall"
                     />
+                    <EventTitle
+                        v-else
+                        title=""
+                        startTime=""
+                        endedTime=""
+                        eventDesc=""
+                        :small="hasSmall"
+                    >
+                        <template #icon>
+                            <svg
+                                width="14"
+                                height="19"
+                                viewBox="0 0 14 19"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M0 7C0 5.13872 0 4.20808 0.244717 3.45492C0.739307 1.93273 1.93273 0.739307 3.45491 0.244717C4.20808 0 5.13872 0 7 0C8.86128 0 9.79192 0 10.5451 0.244717C12.0673 0.739307 13.2607 1.93273 13.7553 3.45492C14 4.20808 14 5.13872 14 7V14.3874C14 16.3045 14 17.2631 13.658 17.77C13.2403 18.3893 12.5122 18.7242 11.7701 18.6383C11.1627 18.568 10.4349 17.9442 8.97931 16.6965C8.33858 16.1474 8.01821 15.8728 7.66631 15.7484C7.23517 15.5961 6.76483 15.5961 6.33369 15.7484C5.98179 15.8728 5.66142 16.1474 5.02069 16.6965C3.5651 17.9442 2.8373 18.568 2.22986 18.6383C1.48778 18.7242 0.759708 18.3893 0.341955 17.77C0 17.2631 0 16.3045 0 14.3874V7Z"
+                                    fill="white"
+                                />
+                            </svg>
+                        </template>
+                    </EventTitle>
                 </div>
+            </div>
+            <div style="display: none;" class="grid-content">
+
                 <div
-                    class="item item-starting"
+                    class="item continued"
                     :class="{
                         'item-small': hasSmall
                     }"
@@ -148,7 +256,7 @@ export default defineComponent({
                     />
                 </div>
                 <div
-                    class="item dot"
+                    class="item hot"
                     :class="{
                         'item-small': hasSmall
                     }"
@@ -167,7 +275,7 @@ export default defineComponent({
                     />
                 </div>
                 <div
-                    class="item dot"
+                    class="item hot"
                     :class="{
                         'item-small': hasSmall
                     }"
@@ -206,26 +314,25 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
-@import url('https://fonts.cdnfonts.com/css/montserrat');
-
-div {
-    font-family: 'Montserrat', sans-serif;
-}
+@use '../theme';
 
 .calendar-content {
     --daily-timeline-width: 46px; //46
     width: 100%;
+    max-width: calc(var(--daily-timeline-width) * 32);
     height: 100%;
     min-height: 776px;
     display: flex;
     flex-direction: column;
 }
 .calendar-title {
-    height: 47px; // 16px
+    height: 63px; // 47
+    flex-shrink: 0;
     .daily-timeline {
         display: flex;
         flex-direction: row;
         padding-left: calc(var(--daily-timeline-width)/2);
+        padding-top: 13px;
         div {
             width: var(--daily-timeline-width);
             height: 42px;
@@ -236,6 +343,8 @@ div {
             text-align: center;
             z-index: 10;
             cursor: default;
+            line-height: 25px;
+            flex-shrink: 0;
         }
         .weekend {
             color: #F15624;
@@ -260,18 +369,28 @@ div {
 .calendar-wrap {
     height: 100%;
     width: calc(var(--daily-timeline-width) * 32);
-    background: repeating-linear-gradient(
-            to right,
-            #DFDFDF 0px,
-            #DFDFDF calc(var(--daily-timeline-width) - 1px),
-            white calc(var(--daily-timeline-width) - 1px),
-            white var(--daily-timeline-width)
-    );
+    &.column {
+        background: repeating-linear-gradient(
+                to right,
+                #DFDFDF 0px,
+                #DFDFDF calc(var(--daily-timeline-width) - 1px),
+                white calc(var(--daily-timeline-width) - 1px),
+                white var(--daily-timeline-width)
+        );
+    }
+    &.row {
+        background: repeating-linear-gradient(
+                to bottom,
+                #DFDFDF 0px,
+                #DFDFDF calc(var(--daily-timeline-width) - 1px),
+                white calc(var(--daily-timeline-width) - 1px),
+                white var(--daily-timeline-width)
+        );
+    }
     border-radius: 30px;
     padding-top: 28px;
     padding-bottom: 28px;
     position: relative;
-
     .current-line {
         width: 1px;
         height: calc(100% + 20px);
@@ -286,6 +405,9 @@ div {
     .grid-content {
         display: grid;
         grid-template-columns: repeat(32, var(--daily-timeline-width));
+        overflow: hidden;
+        /** 白線 */
+        margin-right: 1px;
     }
     .item {
         position: relative;
@@ -294,24 +416,29 @@ div {
         border-radius: 20px;
         text-align: center;
         grid-column: span 9;
-        margin: 5px 20px;
+        margin: 5px 10px;
         z-index: 10;
         transition: height 0.2s ease;
         &.continued {
             margin-left: 0;
             // margin-right: 10px;
-            border-radius: 0 20px 20px 0;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
         }
         &.continuing {
             margin-right: 0;
-            border-radius: 20px 0 0 20px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        &.icon {
+            margin: 5px 20px;
         }
 
     }
     .item-small {
         height: 30px;
     }
-    .dot:after {
+    .hot:after {
         content: '';
         width: 20px;
         height: 20px;
@@ -329,5 +456,8 @@ div {
         left: calc(1 / 2 * 100%);
         transform: translateX(calc(calc(1 / 2 * 100%) * -1)) translateY(calc(calc(1 / 2 * 100%) * -1));
     }
+}
+.hidden {
+    display: none;
 }
 </style>

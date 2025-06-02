@@ -25,8 +25,8 @@ export default defineComponent({
             default: ''
         },
         small: {
-          type: Boolean,
-          default: false
+            type: Boolean,
+            default: false
         }
     },
     setup(props) {
@@ -40,26 +40,44 @@ export default defineComponent({
 
 <template>
     <div class="event-title-container">
-        <div v-show="!!$slots.icon" class="event-icon">
-          <slot name="icon" />
+        <div
+            v-show="!!$slots.icon"
+            class="event-icon"
+        >
+            <slot name="icon" />
         </div>
         <div class="event-title">
-            <h1>{{ title }}</h1>
+            <h1
+                :class="{
+                    'small': small
+                }"
+            >
+                {{ title }}
+            </h1>
         </div>
         <div
-          v-if="startTime !== '' && endedTime !== ''"
-          class="event-content"
+            v-if="startTime !== '' && endedTime !== ''"
+            class="event-content"
         >
-            <p class="event-date">{{ eventDate }}</p>
-            <p class="event-desc" :style="{
-              display: small ? 'none' : 'block'
-            }">{{ eventDesc }}</p>
+            <p
+                class="event-date"
+                :title="eventDate"
+            >
+                {{ eventDate }}
+            </p>
+            <p
+                class="event-desc"
+                v-html="eventDesc"
+                :style="{
+                    display: small ? 'none' : 'block'
+                }"
+            />
         </div>
     </div>
 </template>
 
 <style scoped lang="scss">
-@import url('https://fonts.cdnfonts.com/css/montserrat');
+@use '../theme';
 
 .event-title-container {
     width: 100%;
@@ -68,20 +86,21 @@ export default defineComponent({
     display: flex;
     font-family: 'Montserrat', sans-serif;
     flex-direction: row;
-    gap: 16px;
+    gap: 12px;
     padding-left: 16px;
 }
 .event-icon {
-    width: 51px; // 16 24 11
+    width: fit-content; // 16 24 11
     height: 100%;
+    min-width: 52px;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-left: 2px;
+    margin-left: -16px;
 }
 .event-title {
-    width: 83px;
+    //width: 83px;
     height: 100%;
     min-width: 83px;
     position: relative;
@@ -89,13 +108,20 @@ export default defineComponent({
     text-align: left;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     h1 {
+        width: 100%;
         color: #202020;
         font-size: 23px;
         font-weight: 700;
         box-sizing: border-box;
         text-overflow: ellipsis;
         overflow:hidden;
+        white-space: normal;
+        &.small {
+            font-size: 19px;
+            white-space: nowrap;
+        }
     }
 }
 .event-content {
@@ -109,18 +135,18 @@ export default defineComponent({
     text-align: left;
     line-height: 29px;
     // font-size: 19px;
-    font-weight: 300;
     padding-right: 10px;
     p {
-      width: 100%;
-      max-width: 100%;
-      cursor: default;
-      // font-size: clamp(12px, 1.2vw, 19px);
-      font-size: 19px;
-      box-sizing: border-box;
-      text-overflow: ellipsis;
-      overflow:hidden;
-      white-space: nowrap;
+        width: 100%;
+        max-width: 100%;
+        cursor: default;
+        // font-size: clamp(12px, 1.2vw, 19px);
+        font-weight: 500;
+        font-size: 19px;
+        box-sizing: border-box;
+        text-overflow: ellipsis;
+        overflow:hidden;
+        white-space: nowrap;
     }
 }
 </style>

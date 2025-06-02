@@ -1,53 +1,29 @@
 <script lang="ts">
-import { computed, defineComponent } from 'vue';
+import { computed, defineComponent, PropType } from 'vue';
 
 export default defineComponent({
     name: 'NEventCalendarToolbar',
     props: {
-        dateBeforeLast: {
-            type: Date,
-            required: false
-        },
-        prevDate: {
-            type: Date,
-            required: false
+        fourMonthlyPeriod: {
+            type: Array as PropType<string[]>,
+            required: true,
+            default: () => [],
         },
         currentDate: {
             type: Date,
             required: true
-        },
-        nextDate: {
-            type: Date,
-            required: false
         }
     },
     emits: ['click'],
     setup(props) {
-        const twoMonthAgo = computed(() => {
-            const day = props.dateBeforeLast || new Date(props.currentDate);
-            day.setMonth(day.getMonth() - 2);
-            return day;
-        });
-        const lastMonth = computed(() => {
-            const day = props.nextDate || new Date(props.currentDate);
-            day.setMonth(day.getMonth() - 1);
-            return day;
-        });
-        const thisMonth = computed(() => new Date(props.currentDate));
-
-        const nextMonth = computed(() => {
-            const day = props.nextDate || new Date(props.currentDate);
-            day.setMonth(day.getMonth() + 1);
-            return day;
+        const fourMonthly = computed(() => {
+            const dates = props.fourMonthlyPeriod.map((value: string) => new Date(value));
+            return dates.sort((a: any, b: any) => a - b);
         });
         const padStart = (value: number) => value.toString().padStart(2, '0');
-
         return {
-            lastMonth,
-            twoMonthAgo,
-            thisMonth,
-            nextMonth,
-            padStart
+            padStart,
+            fourMonthly
         };
     },
     methods: {
@@ -61,37 +37,22 @@ export default defineComponent({
 <template>
     <div class="tool-bar-container">
         <div class="line-1" />
-        <div
-            class="calendar-th"
-            @click="onClickHandle(`${twoMonthAgo.getFullYear()}/${padStart(twoMonthAgo.getMonth() + 1)}`)"
+        <template
+            v-for="(date, index) in fourMonthly"
+            :key="index"
         >
-            <div class="month-name">{{ padStart(twoMonthAgo.getMonth() + 1) }}</div>
-            <div class="year-digits">{{ twoMonthAgo.getFullYear() }}</div>
-        </div>
-        <div class="divider"/>
-        <div
-            class="calendar-th"
-            @click="onClickHandle(`${lastMonth.getFullYear()}/${padStart(lastMonth.getMonth() + 1)}`)"
-        >
-            <div class="month-name">{{ padStart(lastMonth.getMonth() + 1) }}</div>
-            <div class="year-digits">{{ lastMonth.getFullYear() }}</div>
-        </div>
-        <div class="divider"/>
-        <div
-            class="calendar-th"
-            @click="onClickHandle(`${thisMonth.getFullYear()}/${padStart(thisMonth.getMonth() + 1)}`)"
-        >
-            <div class="month-name">{{ padStart(thisMonth.getMonth() + 1) }}</div>
-            <div class="year-digits">{{ thisMonth.getFullYear() }}</div>
-        </div>
-        <div class="divider"/>
-        <div
-            class="calendar-th"
-            @click="onClickHandle(`${nextMonth.getFullYear()}/${padStart(nextMonth.getMonth() + 1)}`)"
-        >
-            <div class="month-name">{{ padStart(nextMonth.getMonth() + 1) }}</div>
-            <div class="year-digits">{{ nextMonth.getFullYear() }}</div>
-        </div>
+            <div
+                :class="{
+                    'calendar-th': true,
+                    active: date.getMonth() === currentDate.getMonth(),
+                }"
+                @click="onClickHandle(`${date.getFullYear()}/${date.getMonth() + 1}`)"
+            >
+                <div class="month-name">{{ padStart(date.getMonth() + 1) }}</div>
+                <div class="year-digits">{{ date.getFullYear() }}</div>
+            </div>
+            <div v-if="index !== fourMonthly.length - 1" class="divider"/>
+        </template>
     </div>
 </template>
 

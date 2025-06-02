@@ -1,0 +1,28 @@
+@import url('https://fonts.cdnfonts.com/css/montserrat');
+
+div, span, p, a, h1, h2 {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.scroll-bar-horizontal {
+  &::-webkit-scrollbar {
+    height: 6px;
+    transition: height 0.2s ease;
+  }
+  &:hover::-webkit-scrollbar {
+    //height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb{
+    border-radius: 10px;
+    background-color: rgba(30, 31, 34, 0.5);
+  }
+}
+
+.text-500 {
+  font-weight: 500;
+  font-size: 19px;
+}

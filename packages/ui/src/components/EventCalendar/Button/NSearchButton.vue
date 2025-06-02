@@ -15,60 +15,69 @@ export default defineComponent({
     },
     emits: ['submit'],
     setup(props, { emit }) {
+
         const searchContainer = ref<HTMLDivElement>();
+        // 文字輸入框值
         const searchValue = ref<string>('');
+        // 文字輸入框物件
         const searchInput = ref<HTMLInputElement>();
+        // 輸入文寬度物件
         const textMirror = ref<HTMLInputElement>();
-        const searchFocused = ref<boolean>(false);
+        // 紀錄mirror的寬度
         const mirrorWidth = ref<number>(0);
+        // 開啟搜尋
+        const isOpened = ref<boolean>(false);
+        // 文字輸入框樣式
         const inputLayout = {
             left: 20,
             right: 20,
             iconWidth: 30
         };
+        // 計算輸入文字寬度
         const inputMaxWidth = computed(() => {
             console.log('inputMaxWidth', props.width - props.height - inputLayout.left - inputLayout.right - inputLayout.iconWidth);
             return props.width - props.height - inputLayout.left - inputLayout.right - inputLayout.iconWidth;
         });
+        // 更新輸入文字寬度
         const updateMirrorWidth = () => {
             nextTick(() => {
                 if (textMirror.value) {
-                    const startOffset = (props.width - inputLayout.right - inputLayout.left - inputLayout.iconWidth) - 2;
-                    mirrorWidth.value = startOffset - textMirror.value.offsetWidth;
+                    mirrorWidth.value = textMirror.value.offsetWidth;
+                    console.log(`mirrorWidth :${textMirror.value.offsetWidth} ${inputLayout.left} ${inputLayout.right}`, mirrorWidth.value);
                 }
             });
         };
-
-        const onFocusInHandle = () => {
-            console.log('onFocusInHandle');
-            searchFocused.value = true;
-        };
-        const onFocusOutHandle = () => {
-            console.log('onFocusOutHandle');
-            searchFocused.value = false;
-            searchValue.value = '';
-        };
+        // 清除文字
         const onClearClickHandle = () => {
             console.log('onClearClickHandle');
             searchValue.value = '';
         };
-        const onSubmitDownHandle = () => {
-            console.log('onSubmitDownHandle');
-        };
-        const onSubmitUpHandle = () => {
-            console.log('onSubmitUpHandle');
-            emit('submit', searchValue.value);
-        };
+        // 開啟搜尋
+        const onOpenHandle = () => {
+            console.log('onOpenHandle');
+            isOpened.value = !isOpened.value;
+            if (!isOpened.value) {
+                if (searchValue.value !== '') emit('submit', searchValue.value);
+                searchValue.value = '';
+            } else {
+                setTimeout(() => searchInput.value?.focus(), 300);
+            }
+        }
+        const onInputFocusoutHandle = () => {
+            console.log("onInputFocusoutHandle", isOpened.value);
+            // if (!searchValue.value && isOpened.value) isOpened.value = false;
+        }
+        // 監聽文字改變
         watch(searchValue, updateMirrorWidth);
         onMounted(() => {
             updateMirrorWidth();
             console.log(`searchContainer ${searchContainer.value?.offsetWidth} ${searchContainer.value?.offsetHeight}`);
             const container = searchContainer.value;
             if (container) {
-                container.style.setProperty('--search-button-width', `${props.width}px`);
+                container.style.setProperty('--search-button-width', `${Math.min(props.width, container.offsetWidth)}px`);
                 container.style.setProperty('--search-button-height', `${props.height}px`);
                 container.style.setProperty('--search-input-width', `${props.width - inputLayout.left}px`);
-                container.style.setProperty('--search-input-padding-right', `${props.height + inputLayout.right + 5}px`);
+                container.style.setProperty('--search-input-padding-right', `${props.height + inputLayout.iconWidth + inputLayout.right}px`);
                 container.style.setProperty('--search-input-padding-left', `${inputLayout.left}px`);
             }
         });
@@ -78,14 +87,12 @@ export default defineComponent({
             searchValue,
             searchInput,
             textMirror,
-            searchFocused,
             mirrorWidth,
             inputMaxWidth,
-            onFocusInHandle,
-            onFocusOutHandle,
+            onInputFocusoutHandle,
             onClearClickHandle,
-            onSubmitDownHandle,
-            onSubmitUpHandle
+            onOpenHandle,
+            isOpened,
         };
     }
 });
@@ -96,32 +103,12 @@ export default defineComponent({
         class="search-button-container"
         ref="searchContainer"
     >
-        <label
-            class="calendar-search-button"
+        <div
+            class="search-input-box"
             :class="{
-                'active': searchFocused
+                'active': isOpened
             }"
         >
-            <span
-                class="search-icon"
-                :class="{ 'active': searchFocused }"
-                @mousedown.prevent.stop="onSubmitDownHandle"
-                @mouseup.prevent.stop="onSubmitUpHandle"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 23 23" fill="none">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M10 0.25C4.61522 0.25 0.25 4.61522 0.25 10C0.25 15.3848 4.61522 19.75 10 19.75C15.3848 19.75 19.75 15.3848 19.75 10C19.75 4.61522 15.3848 0.25 10 0.25ZM1.75 10C1.75 5.44365 5.44365 1.75 10 1.75C14.5563 1.75 18.25 5.44365 18.25 10C18.25 14.5563 14.5563 18.25 10 18.25C5.44365 18.25 1.75 14.5563 1.75 10Z" fill="currentColor"/>
-                    <path d="M18.5304 17.4698C18.2375 17.1769 17.7626 17.1769 17.4697 17.4698C17.1768 17.7626 17.1768 18.2375 17.4697 18.5304L21.4696 22.5304C21.7625 22.8233 22.2374 22.8233 22.5303 22.5304C22.8232 22.2375 22.8232 21.7626 22.5303 21.4697L18.5304 17.4698Z" fill="currentColor"/>
-                </svg>
-            </span>
-            <input
-                class="calendar-search-input"
-                type='text'
-                placeholder=''
-                v-model="searchValue"
-                ref="searchInput"
-                @focusin="onFocusInHandle"
-                @focusout="onFocusOutHandle"
-            />
             <span
                 class="hidden-mirror"
                 ref="textMirror"
@@ -133,7 +120,7 @@ export default defineComponent({
                 class="clear-button"
                 v-if="searchValue.length > 0"
                 :style="{
-                    right: `${ mirrorWidth }px`
+                    left: `${ mirrorWidth }px`
                 }"
                 @mousedown.prevent.stop="onClearClickHandle"
             >
@@ -142,11 +129,35 @@ export default defineComponent({
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M11 0.25C5.06294 0.25 0.25 5.06294 0.25 11C0.25 16.9371 5.06294 21.75 11 21.75C16.9371 21.75 21.75 16.9371 21.75 11C21.75 5.06294 16.9371 0.25 11 0.25ZM1.75 11C1.75 5.89137 5.89137 1.75 11 1.75C16.1086 1.75 20.25 5.89137 20.25 11C20.25 16.1086 16.1086 20.25 11 20.25C5.89137 20.25 1.75 16.1086 1.75 11Z" fill="#9F9F9F"/>
                 </svg>
             </span>
-        </label>
+            <input
+                class="calendar-search-input"
+                type='text'
+                placeholder=''
+                v-model="searchValue"
+                @focusout="onInputFocusoutHandle"
+                ref="searchInput"
+            />
+        </div>
+        <div
+            class="calendar-search-button"
+            :class="{
+                'active': isOpened
+            }"
+            @pointerup="onOpenHandle"
+        >
+            <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 23 23" fill="none">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M10 0.25C4.61522 0.25 0.25 4.61522 0.25 10C0.25 15.3848 4.61522 19.75 10 19.75C15.3848 19.75 19.75 15.3848 19.75 10C19.75 4.61522 15.3848 0.25 10 0.25ZM1.75 10C1.75 5.44365 5.44365 1.75 10 1.75C14.5563 1.75 18.25 5.44365 18.25 10C18.25 14.5563 14.5563 18.25 10 18.25C5.44365 18.25 1.75 14.5563 1.75 10Z" fill="currentColor"/>
+                    <path d="M18.5304 17.4698C18.2375 17.1769 17.7626 17.1769 17.4697 17.4698C17.1768 17.7626 17.1768 18.2375 17.4697 18.5304L21.4696 22.5304C21.7625 22.8233 22.2374 22.8233 22.5303 22.5304C22.8232 22.2375 22.8232 21.7626 22.5303 21.4697L18.5304 17.4698Z" fill="currentColor"/>
+                </svg>
+            </span>
+        </div>
     </div>
 </template>
 
 <style scoped lang="scss">
+@use '../theme';
+
 .search-button-container {
     width: var(--search-button-width, 265px);
     height: var(--search-button-height, 65px);
@@ -154,42 +165,7 @@ export default defineComponent({
     display: flex;
     align-items: center;
     justify-content: right;
-}
-.calendar-search-input {
-    width: var(--search-button-height, 65px);
-    height: 100%;
-    position: absolute;
-    top: 0;
-    right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #9F9F9F;
-    border-radius: 999px;
-    z-index: 2;
-    transition: all 0.3s;
-    cursor: pointer;
-    color: black;
-    font-size: 19px;
-    font-weight: 700;
-}
-.hidden-mirror {
-    position: absolute;
-    visibility: hidden;
-    white-space: pre;
-    font-size: 19px;
-    font-weight: 700;
-    pointer-events: none;
-    text-align: left;
-    opacity: 0;
-}
-.calendar-search-input:focus {
-    width: var(--search-input-width, 240px);
-    padding-right: var(--search-input-padding-right, 90px);
-    padding-left: var(--search-input-padding-left, 20px);
-}
-.calendar-search-input:focus {
-    outline: none;
+    flex-shrink: 0;
 }
 .calendar-search-button {
     width: var(--search-button-height, 65px);
@@ -198,7 +174,21 @@ export default defineComponent({
     display: flex;
     align-items: center;
     justify-content: center;
-
+    cursor: pointer;
+    z-index: 20;
+    .search-icon {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9F9F9F;
+        z-index: 10;
+    }
+    &.active > .search-icon {
+        color: white;
+    }
     &.active:after {
         content: '';
         width: 53px;
@@ -209,25 +199,57 @@ export default defineComponent({
         border-radius: 999px;
         transition: all 0.3s;
         background-color: #D9D9D9;
-        z-index: -1;
     }
 }
-
-.search-icon {
+.search-input-box {
     width: var(--search-button-height, 65px);
-    height: var(--search-button-height, 65px);
-    position: relative;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: #9F9F9F;
-    z-index: 10;
-    cursor: pointer;
-
+    justify-content: left;
+    border: 1px solid #9F9F9F;
+    border-radius: 999px;
+    z-index: 1;
+    background: white;
+    transition: all 0.3s;
+    color: black;
+    font-weight: 700;
     &.active {
-        color: white;
+        width: 100%;
+    }
+    .calendar-search-input {
+        position: relative;
+        width: calc(
+            var(--search-input-width, 265px) -
+            var(--search-input-padding-right, 90px)
+        );
+        height: 100%;
+        font-size: 19px;
+        background: transparent;
+        border: none;
+        &:focus {
+            outline: none;
+        }
+        padding-left: var(--search-input-padding-left, 20px);
     }
 }
+.hidden-mirror {
+    position: absolute;
+    left: 0;
+    visibility: hidden;
+    white-space: pre;
+    font-size: 19px;
+    font-weight: 700;
+    pointer-events: none;
+    text-align: left;
+    color: red;
+    padding-left: var(--search-input-padding-left, 20px);
+}
+
+
 .clear-button {
     width: 22px;
     height: 22px;

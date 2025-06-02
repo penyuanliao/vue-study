@@ -1,53 +1,54 @@
 <script lang="ts">
-import { computed, defineComponent, PropType, ref } from 'vue';
-import SwitchButton from './Button/SwitchButton.vue';
+// @ts-nocheck
+import { defineComponent, ref } from 'vue';
 import NCalendarContent from './NCalendarContent/index.vue';
-import GridType from "@/components/EventCalendar/NCalendarContent/GridType.vue";
-import NSearchButton from "@/components/EventCalendar/Button/NSearchButton.vue";
-import NToggleButton from "@/components/EventCalendar/Button/NToggleButton.vue";
-import EventCalendarToolbar from "@/components/EventCalendar/NCalendarToolbar/index.vue";
-import type { IActivities } from "@/components/EventCalendar/eventCalendar.models";
+import GridType from '@/components/EventCalendar/NCalendarContent/GridType.vue';
+import NSearchButton from '@/components/EventCalendar/Button/NSearchButton.vue';
+import NToggleButton from '@/components/EventCalendar/Button/NToggleButton.vue';
+import NEventCalendarToolbar from '@/components/EventCalendar/NCalendarToolbar/index.vue';
+import NSidebar from '@/components/EventCalendar/NSidebar/index.vue';
+import useEventCalendar, { ICalendars, IEvents } from '@/components/EventCalendar/useEventCalendar.ts';
 
-export interface IActivities {
-    name: string;
-    color: string;
-    visibility: boolean;
-}
 export default defineComponent({
     name: 'CalendarTimeline',
     components: {
-        EventCalendarToolbar,
+        NSidebar,
+        NEventCalendarToolbar,
         NToggleButton,
-        NSearchButton: NSearchButton,
+        NSearchButton,
         GridType,
-        NCalendarContent,
-        SwitchButton
+        NCalendarContent
     },
     setup(props) {
         const isToday = ref<boolean>(false);
-        const someday = ref<Date>(new Date('2025/01/05'));
-        const activities = ref<IActivities[]>([
+        const activeDate = ref<Date>(new Date('2024/08'));
+        const calendars = ref<ICalendars[]>([
             {
                 name: '本月上线',
                 color: '#FF9FA0',
-                visibility: true
+                checked: true,
+                sort: 1
             },
             {
                 name: '持续进行',
                 color: '#74DFFF',
-                visibility: true
+                checked: true,
+                sort: 1
             },
             {
                 name: '独家活动',
                 color: '#FFDD48',
-                visibility: true
+                checked: true,
+                sort: 1
             },
             {
                 name: '游戏商',
                 color: '#FF9FA0',
-                visibility: false
+                checked: false,
+                sort: 1
             }
         ]);
+        const events = ref<IEvents[]>([]);
         const gridType = ref<String>('medium');
         const handle = (value: { isChecked: boolean, id: string }) => {
             console.log('#tag1-change', value);
@@ -59,15 +60,25 @@ export default defineComponent({
         };
         const searchSubmitHandle = (value: string) => {
             console.log(`searchSubmitHandle: ${value}`);
-        }
+        };
+        const onClickCalendarThHandle = (th: string) => {
+            console.log(`onClickCalendarThHandle: ${th}`);
+
+        };
         // groups.value[0].events_list // 該TAG行事曆清單
+        const eventCalendar = useEventCalendar();
+        calendars.value = eventCalendar.calendars;
+        events.value = eventCalendar.events;
+
         return {
-            activities,
+            events,
+            calendars,
             isToday,
-            someday,
+            activeDate,
             handle,
             gridTypeChange,
             searchSubmitHandle,
+            onClickCalendarThHandle,
             gridType
         };
     }
@@ -77,44 +88,37 @@ export default defineComponent({
 <template>
     <div class="calendar-timeline-container">
         <div class="n-calendar-wrap">
+            <!-- 標題日期 -->
             <div class="title">
                 <NToggleButton @selected="(value:boolean) => (isToday = value)">今天</NToggleButton>
-                <EventCalendarToolbar :someday="someday"/>
-                <div class="button-group">
+                <NEventCalendarToolbar
+                    :four-monthly-period="['2024/08/12', '2024/07/12', '2024/06/06', '2024/05/10']"
+                    :currentDate="activeDate"
+                    @click="onClickCalendarThHandle"
+                />
+                <div class="grid-type-group">
                     <label class="button-group-title">Grid Type</label>
                     <GridType @change="gridTypeChange" />
                 </div>
-                <NSearchButton @submit="searchSubmitHandle"></NSearchButton>
+                <NSearchButton @submit="searchSubmitHandle"/>
             </div>
-            <div class="side-bar">
-                <div class="scheduled">
-                    <div
-                        v-for="(item, i) in activities"
-                        :key="i"
-                        class="activities"
-                    >
-                        <div class="text"><span>{{ item.name }}</span></div>
-                        <span class="tag" :style="{
-                            background: item.color
-                        }"/>
-                        <SwitchButton
-                            :id="`tag-${ i }`"
-                            class="switch-btn"
-                            width="47"
-                            height="30"
-                            border="2"
-                            @change="handle"
-                        />
-                    </div>
-                </div>
+            <!-- 標籤 -->
+            <NSidebar class="sidebar" v-model:calendars="calendars" />
+            <div class="content scroll-bar-horizontal">
+                <NCalendarContent
+                    :gridType="gridType"
+                    :activeDate="activeDate"
+                    :events="events"
+                    :selected="isToday"
+                />
             </div>
-            <NCalendarContent :grid-type="gridType"/>
         </div>
     </div>
 </template>
 
 <style scoped lang="scss">
-@import url('https://fonts.cdnfonts.com/css/montserrat');
+@use 'theme';
+
 .calendar-timeline-container {
     min-height: 1080px;
     max-width: 1920px;
@@ -131,7 +135,7 @@ export default defineComponent({
     background-color: rgba(255, 255, 255, 0.1);
     position: relative;
     display: grid;
-    grid-template-columns: 1fr 4fr;
+    grid-template-columns: auto 4fr;
     grid-column-gap: 0;
     align-items: start;
     border-radius: 30px;
@@ -151,7 +155,8 @@ export default defineComponent({
         width: 100%;
         height: 100%;
         min-height: 100px; // 146px
-        grid-column: 2 / span 4;
+        grid-column: 1 / span 4;
+        grid-column-start: 2;
         position: relative;
         display: flex;
         flex-direction: row;
@@ -160,56 +165,30 @@ export default defineComponent({
         text-align: center;
         justify-content: space-between;
         gap: 10px;
-    }
-    .side-bar {
-        width: auto;
-        height: 100%;
-        padding-top: 60px;
-        padding-bottom: 60px;
-    }
-}
-
-
-.scheduled {
-    width: 223px;
-    height: 100%;
-    min-height: 200px;
-    position: relative;
-    display: inline-block;
-    .activities {
-        position: relative;
-        display: flex;
-        width: 100%;
-        height: 54px;
-        align-items: center;
-        gap: 14px;
-        padding: 51px 0;
-    }
-    .text {
-        width: 100%;// 176px;
-        height: 29px;
-        display: flex;
-        align-items: center;
-        justify-content: left;
-        color: #606060;
-        span {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 23.49px;
-            font-style: normal;
-            font-weight: 700;
+        transition: all 0.3s;
+        @media (max-width: 959px) {
+            grid-column-start: 1;
         }
     }
-    .tag {
-        width: 29px;
-        height: 29px;
-        min-width: 29px;
-        border-radius: 50%;
-        background: grey;
+    .sidebar {
+        grid-column: 1 / span 1;
+    }
+    .content {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        grid-column: 2 / span 4;
+        display: flex;
+        justify-content: center;
+        overflow: hidden;
+        overflow-x: scroll;
+    }
+    .search-btn {
+        position: absolute;
     }
 }
 
-
-.button-group {
+.grid-type-group {
     height: 100%;
     position: relative;
     display: flex;

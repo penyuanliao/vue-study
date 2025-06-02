@@ -31,6 +31,8 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
+@use '../theme';
+
 .toggle-button {
     width: 117px;
     height: 65px;
@@ -47,6 +49,7 @@ export default defineComponent({
     justify-content: center;
     cursor: pointer;
     user-select: none;
+    transition: background-color 0.2s ease-in-out;
 }
 .selected {
     border: white 1px solid;

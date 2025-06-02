@@ -9,7 +9,7 @@ const defColor = {
 };
 
 export default defineComponent({
-    name: 'SwitchComponent', // 建議為組件命名
+    name: 'SwitchButton',
     props: {
         id: {
             type: String,
@@ -86,24 +86,27 @@ export default defineComponent({
         class="switch-container"
         ref="switchContainer"
     >
-        <input
-            class="switch-input"
-            ref="switchInput"
-            type="checkbox"
-            :id="id"
-            :checked="data.checked"
-            @change="(e: any) => onChangeHandle((e.target as HTMLInputElement).checked)"
-        />
         <label
             class="track"
-            :for="id"
+            :class="{
+                on: data.checked
+            }"
         >
+            <input
+                class="switch-input"
+                ref="switchInput"
+                type="checkbox"
+                :checked="data.checked"
+                @change="(e: any) => onChangeHandle((e.target as HTMLInputElement).checked)"
+            />
             <span class="switch-txt" />
         </label>
     </div>
 </template>
 
 <style lang="scss" scoped>
+@use '../theme';
+
 /* 樣式保持不變 */
 .switch-container {
     position: relative;
@@ -155,14 +158,14 @@ export default defineComponent({
     content: attr(turnOff);
     color: #ccc;
 }
-.switch-input:checked + .track {
+.on {
     background: var(--track-on-color);
 }
 .track:active:after {
     width: calc(var(--switch-height));
 }
-.switch-input:checked + .track:after {
-    left: calc(100% - var(--thumb-border, '2px'));
+.on:after {
+    left: calc(100% - var(--thumb-border, 2px));
     transform: translateX(-100%);
     background: var(--thumb-on-color);
 }
