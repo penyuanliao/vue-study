@@ -3,15 +3,20 @@ import { defineComponent, ref } from 'vue';
 
 export default defineComponent({
     name: 'NToggleButton',
-    emits: ['selected'],
-    setup(_, { emit }) {
-        const selected = ref<boolean>(false);
+    props: {
+        selected: {
+            type: Boolean,
+            default: false
+        }
+    },
+    emits: ['selected', 'update:selected'],
+    setup(props, { emit }) {
         const onSelectedHandle = () => {
-            selected.value = !selected.value;
-            emit('selected', selected.value);
+            const selected = !props.selected;
+            emit('update:selected', selected);
+            emit('selected', selected);
         }
         return {
-            selected,
             onSelectedHandle
         };
     }

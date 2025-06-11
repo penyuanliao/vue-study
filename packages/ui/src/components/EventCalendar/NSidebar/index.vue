@@ -45,8 +45,6 @@ export default defineComponent({
                     :id="`tag-${ i }`"
                     :data="item"
                     class="switch-btn"
-                    width="47"
-                    height="30"
                     border="2"
                     @change="(value) => handle(value, i)"
                 />
@@ -68,7 +66,7 @@ export default defineComponent({
         position: absolute;
         top: 176px;
         border-radius: 16px;
-        z-index: 20;
+        z-index: 10;
         background-color: white;
         transform: translateX(-106%);
     }
@@ -117,13 +115,40 @@ export default defineComponent({
         border-radius: 50%;
         background: grey;
         transition: opacity 0.3s;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
     }
 }
 @media (max-width: 1023px) {
     .scheduled {
+        min-width: 203px;
+
+        .calendars {
+            align-items: center;
+            justify-content: space-evenly;
+        }
         .text {
-            width: 100px;
+            width: 70px;
             flex-shrink: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            span {
+                font-size: 14px;
+            }
+        }
+        .switch-btn {
+            --switch-width: 33px;
+            --switch-height: 20px;
+        }
+        .tag {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
         }
     }
 }

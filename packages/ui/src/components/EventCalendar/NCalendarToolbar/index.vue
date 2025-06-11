@@ -5,7 +5,7 @@ export default defineComponent({
     name: 'NEventCalendarToolbar',
     props: {
         fourMonthlyPeriod: {
-            type: Array as PropType<string[]>,
+            type: Array as PropType<{ key: string, isUpdate: boolean }[]>,
             required: true,
             default: () => [],
         },
@@ -17,8 +17,11 @@ export default defineComponent({
     emits: ['click'],
     setup(props) {
         const fourMonthly = computed(() => {
-            const dates = props.fourMonthlyPeriod.map((value: string) => new Date(value));
-            return dates.sort((a: any, b: any) => a - b);
+            const monthly = props.fourMonthlyPeriod.map(({ key, isUpdate }: {
+                key: string,
+                isUpdate: boolean
+            }) => ({ date: new Date(key), isUpdate }));
+            return monthly.sort((a, b) => a.date.getTime() - b.date.getTime());
         });
         const padStart = (value: number) => value.toString().padStart(2, '0');
         return {
@@ -38,15 +41,16 @@ export default defineComponent({
     <div class="tool-bar-container">
         <div class="line-1" />
         <template
-            v-for="(date, index) in fourMonthly"
+            v-for="({ date, isUpdate }, index) in fourMonthly"
             :key="index"
         >
             <div
                 :class="{
                     'calendar-th': true,
+                    'updated': isUpdate,
                     active: date.getMonth() === currentDate.getMonth(),
                 }"
-                @click="onClickHandle(`${date.getFullYear()}/${date.getMonth() + 1}`)"
+                @click="onClickHandle(`${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`)"
             >
                 <div class="month-name">{{ padStart(date.getMonth() + 1) }}</div>
                 <div class="year-digits">{{ date.getFullYear() }}</div>
@@ -111,14 +115,73 @@ export default defineComponent({
             line-height: 29px;
             margin-top: -10px;
         }
+        &.updated:after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            position: absolute;
+            background: #FF0000;
+            border: white 2px solid;
+            border-radius: 50%;
+            box-shadow: 0 4px 4px 0 #00000040;
+            z-index: 30;
+            top: -6px;
+            left: -6px;
+        }
     }
+
     .divider {
         flex: 1 1 0;
         height: 1px;
-        min-width: 24px;
+        min-width: 0;
         max-width: 117px;
         background: #DFDFDF;
     }
+}
+@media (max-width: 959px) {
+    .tool-bar-container {
+        min-width: 230px;
+        gap: 10px;
 
+        .calendar-th {
+            width: 47px;
+            height: 49px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+
+            .month-name {
+                height: 100%;
+                font-size: 22px;
+                font-weight: 700;
+                line-height: 30px;
+            }
+            .year-digits {
+                font-size: 12px;
+                font-weight: 500;
+                line-height: 12px;
+                margin-top: -20px;
+
+            }
+            &.active {
+                background: rgba(241, 86, 36, 0.8);
+                border: 1px solid #F15624;
+                .month-name {
+                    color: white;
+                }
+                .year-digits {
+                    color: white;
+                }
+            }
+            &.updated:after {
+                display: none;
+            }
+        }
+    }
+    .line-1 {
+        display: none;
+    }
+    .divider {
+        display: none;
+    }
 }
 </style>

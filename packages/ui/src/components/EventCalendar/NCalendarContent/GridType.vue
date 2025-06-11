@@ -1,16 +1,25 @@
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch } from "vue";
 
 export default defineComponent({
     name: 'GridType',
-    emits: ['change'],
-    setup() {
-        const layout = ref('medium');
-
+    emits: ['change', 'update:selected'],
+    props: {
+        selected: {
+            type: String,
+            default: 'small'
+        }
+    },
+    setup(props) {
+        const layout = ref(props.selected);
+        watch(()=> props.selected, (value) => {
+            layout.value = value;
+        });
         return { layout };
     },
     methods: {
         onChangeHandle() {
+            this.$emit('update:selected', this.layout);
             this.$emit('change', this.layout);
         }
     }

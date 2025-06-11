@@ -39,14 +39,25 @@ export default defineComponent({
 </script>
 
 <template>
-    <div class="event-title-container">
+    <div
+        class="event-title-container"
+        :class="{
+            icon: !!$slots.icon
+        }"
+    >
+        <div class="event-title-tag" v-if="!!$slots.coTag">
+            <slot name="coTag" />
+        </div>
         <div
-            v-show="!!$slots.icon"
+            v-if="!!$slots.icon"
             class="event-icon"
         >
             <slot name="icon" />
         </div>
-        <div class="event-title">
+        <div
+            class="event-title"
+            v-show="!$slots.icon"
+        >
             <h1
                 :class="{
                     'small': small
@@ -88,16 +99,22 @@ export default defineComponent({
     flex-direction: row;
     gap: 12px;
     padding-left: 16px;
+    &.icon {
+        padding-left: 0;
+    }
+    .event-title-tag {
+        padding-top: 2px;
+    }
 }
 .event-icon {
-    width: fit-content; // 16 24 11
+    width: 100%; // 16 24 11
     height: 100%;
-    min-width: 52px;
+    min-width: 0;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: -16px;
+    flex-shrink: 0;
 }
 .event-title {
     //width: 83px;

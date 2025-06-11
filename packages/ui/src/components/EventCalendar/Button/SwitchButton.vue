@@ -37,11 +37,9 @@ export default defineComponent({
         },
         width: {
             type: String,
-            required: true
         },
         height: {
             type: String,
-            required: true
         },
         border: {
             type: String,
@@ -65,8 +63,8 @@ export default defineComponent({
             switchContainerEl.style.setProperty('--thumb-off-color', this.thumbOffColor || defColor.thumb);
 
             switchContainerEl.style.setProperty('--thumb-border', `${this.border}px`);
-            switchContainerEl.style.setProperty('--switch-width', `${this.width}px`);
-            switchContainerEl.style.setProperty('--switch-height', `${this.height}px`);
+            // switchContainerEl.style.setProperty('--switch-width', `${this.width}px`);
+            // switchContainerEl.style.setProperty('--switch-height', `${this.height}px`);
         }
     },
     methods: {
@@ -109,6 +107,8 @@ export default defineComponent({
 
 /* 樣式保持不變 */
 .switch-container {
+    --switch-width: 47px;
+    --switch-height: 30px;
     position: relative;
     display: flex;
     width: var(--switch-width, 100px);
