@@ -35,12 +35,6 @@ export default defineComponent({
             default: defColor.thumb,
             required: false
         },
-        width: {
-            type: String,
-        },
-        height: {
-            type: String,
-        },
         border: {
             type: String,
             required: true

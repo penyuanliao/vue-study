@@ -7,15 +7,20 @@ import NSearchButton from '@/components/EventCalendar/Button/NSearchButton.vue';
 import NToggleButton from '@/components/EventCalendar/Button/NToggleButton.vue';
 import NEventCalendarToolbar from '@/components/EventCalendar/NCalendarToolbar/index.vue';
 import NSidebar from '@/components/EventCalendar/NSidebar/index.vue';
-import useEventCalendar, { ICalendars, IEvents } from '@/components/EventCalendar/useEventCalendar.ts';
+import NDialog from "@/components/EventCalendar/Tips/NDialog.vue";
+import useEventCalendar, { ICalendars, IEvents, popupTipsManager } from '@/components/EventCalendar/useEventCalendar.ts';
 import json from './data.json';
 import month6 from './data2.json';
 import month5 from './dataMonth5.json';
 import month7 from './dataMonth7.json';
+import useNTouchMove from "@/components/EventCalendar/NTouchMove/useNTouchMove";
+import NSymbols from "@/components/EventCalendar/Button/NSymbols.vue";
 
 export default defineComponent({
     name: 'EventCalendar',
     components: {
+        NSymbols,
+        NDialog,
         NSidebar,
         NEventCalendarToolbar,
         NToggleButton,
@@ -26,12 +31,14 @@ export default defineComponent({
     setup(props) {
         // DEMO
         const apiData = ref(json);
-
-        const isToday = ref<boolean>(false);
+        const current = ref<any>(null);
+        const now = new Date('2024/6/1');
+        const popupTips = ref<boolean>(!popupTipsManager.getStatus('event-calendar-popup-tips'));
+        const isCurrentMonth = ref<boolean>(false);
         const activeDate = ref<Date>(new Date('2024/08/02')); // safari 要到日不能只有月份
         const calendars = ref<ICalendars[]>([]);
         const events = ref<IEvents[]>([]);
-        const gridType = ref<'medium'| 'small'>('small');
+        const gridType = ref<'medium' | 'small'>('small');
         const fourMonthlyPeriod = ref<{ key: string, isUpdate: boolean }[]>([
             {
                 key: '2024/5/1',
@@ -51,40 +58,11 @@ export default defineComponent({
             }
         ]);
         const showSidebar = ref<boolean>(false);
+        const showToolbar = ref<boolean>(true);
+        const isDeflate = ref<boolean>(true);
+        const contentRef = ref<HTMLElement|null>(null);
 
-        const isDeflate = ref<boolean>(false);
-
-        const handle = (value: { isChecked: boolean, id: string }) => {
-            console.log('#tag1-change', value);
-        };
-
-        const gridTypeChange = (value: string) => {
-            console.log('#Grid Type:', gridType.value, value);
-            gridType.value = value;
-        };
-        const searchSubmitHandle = (value: string) => {
-            console.log(`searchSubmitHandle: ${value}`);
-            console.log(events.value);
-            if (value === '') {
-                events.value = eventCalendar.events;
-
-            } else {
-                events.value = events.value.filter(({ title, eventDesc }: IEvents) => {
-                    console.log(title, eventDesc);
-                    return title.includes(value) || eventDesc.includes(value);
-                });
-            }
-        };
-        const onClickSidebarMenuHandle = () => {
-            showSidebar.value = !showSidebar.value;
-            console.log("showSidebar", showSidebar.value);
-        }
-        const onClickCalendarThHandle = (th: string) => {
-            const [ year, month ] = th.split("/");
-            const selectMonth: string = (th.split('/') <= 2) ? `${th}/1` : th;
-            console.log(`onClickCalendarThHandle: ${selectMonth}`, selectMonth.indexOf('2024/06'));
-            activeDate.value = new Date(selectMonth);
-
+        const setData = (month: string) => {
             if (+month === 5) {
                 apiData.value = month5;
             }
@@ -97,61 +75,95 @@ export default defineComponent({
             if (+month === 8) {
                 apiData.value = json;
             }
+        }
+
+        const handle = (value: { isChecked: boolean, id: string }) => {
+            console.log('#tag1-change', value);
+        };
+
+        const gridTypeChange = (value: string) => {
+            console.log('#Grid Type:', gridType.value, value);
+            gridType.value = value;
+        };
+        const searchSubmitHandle = (value: string) => {
+            console.log(`searchSubmitHandle: ${value}`);
+            if (value === '') {
+                events.value = current.value?.events;
+
+            } else {
+                events.value = events.value.filter(({ title, eventDesc }: IEvents) => {
+                    return title.includes(value) || eventDesc.includes(value);
+                });
+            }
+        };
+        const onClickSidebarMenuHandle = () => {
+            showSidebar.value = !showSidebar.value;
+            console.log("showSidebar", showSidebar.value);
+        }
+        const onClickCalendarThHandle = (th: string) => {
+            const [ year, month ] = th.split("/");
+            const selectMonth: string = (th.split('/') <= 2) ? `${th}/1` : th;
+            console.log(`onClickCalendarThHandle: ${selectMonth}`, selectMonth.indexOf('2024/06'), activeDate.value.getMonth() === now.getMonth());
+            activeDate.value = new Date(selectMonth);
+            isCurrentMonth.value = activeDate.value.getMonth() === now.getMonth();
+            setData(month);
             const eventCalendar = useEventCalendar(apiData.value, activeDate.value, isDeflate.value);
             calendars.value = eventCalendar.calendars;
             events.value = eventCalendar.events;
-            fourMonthlyPeriod.value.forEach((item, index) => {
-                if (item.key === th) {
-                    fourMonthlyPeriod.value[index].isUpdate = eventCalendar.monthIsUpdate;
-                }
-            });
+            current.value = eventCalendar;
         };
 
         const onClickThisMonthHandle = (bool: boolean) => {
             console.log(`onClickThisMonthHandle: ${bool}`);
-            // const now = new Date();
-            // onClickCalendarThHandle(`${now.getFullYear()}/${now.getMonth() + 1}`);
-            isDeflate.value = !isDeflate.value;
-            const eventCalendar = useEventCalendar(apiData.value, activeDate.value, isDeflate.value);
-            calendars.value = eventCalendar.calendars;
-            events.value = eventCalendar.events;
+            // popupTips.value = !popupTips.value; // 測試提示彈窗
+            // isDeflate.value = !isDeflate.value; // 測試合併活動時間
+
+            fourMonthlyPeriod.value.forEach((item, index) => {
+                const act: Date = new Date(item.key);
+                if (act.getMonth() === now.getMonth()) {
+                    activeDate.value = act;
+                    setData(`${act.getMonth() + 1}`);
+                    const eventCalendar = useEventCalendar(apiData.value, activeDate.value, isDeflate.value);
+                    calendars.value = eventCalendar.calendars;
+                    events.value = eventCalendar.events;
+                    current.value = eventCalendar;
+                }
+            });
         };
-        // groups.value[0].events_list // 該TAG行事曆清單
-        const eventCalendar = useEventCalendar(apiData.value, activeDate.value, isDeflate.value);
-        calendars.value = eventCalendar.calendars;
-        events.value = eventCalendar.events;
-        console.log('events:', events.value);
-        console.log('monthIsUpdate:', eventCalendar.monthIsUpdate);
-        fourMonthlyPeriod.value[3].isUpdate = eventCalendar.monthIsUpdate;
+
 
         onMounted(() => {
             fourMonthlyPeriod.value.forEach((item, index) => {
                 const [ year, month ] = item.key.split("/");
-                let source;
-                if (+month === 5) {
-                    source = month5;
-                }
-                if (+month === 6) {
-                    source = month6;
-                }
-                if (+month === 7) {
-                    source = month7;
-                }
-                if (+month === 8) {
-                    source = json;
-                }
-                const eventCalendar = useEventCalendar(source, activeDate.value, isDeflate.value);
+                const act: Date = new Date(item.key);
+                setData(month);
+                const eventCalendar = useEventCalendar(apiData.value, act, isDeflate.value);
                 fourMonthlyPeriod.value[index].isUpdate = eventCalendar.monthIsUpdate;
-
+                if (act.getMonth() === now.getMonth()) {
+                    calendars.value = eventCalendar.calendars;
+                    events.value = eventCalendar.events;
+                    activeDate.value = act;
+                    current.value = eventCalendar;
+                    console.log('events:', events.value);
+                    console.log('monthIsUpdate:', eventCalendar.monthIsUpdate);
+                }
             });
+            console.log("contentRef", contentRef.value);
+            const { manager } = useNTouchMove();
+            manager().setup(contentRef.value);
+
         });
         return {
+            contentRef,
+            popupTips,
             events,
             calendars,
-            isToday,
+            isCurrentMonth,
             activeDate,
             fourMonthlyPeriod,
             showSidebar,
+            showToolbar,
+            popupTipsManager,
             handle,
             gridTypeChange,
             searchSubmitHandle,
@@ -168,12 +180,19 @@ export default defineComponent({
     <div class="event-calendar-container">
         <div class="n-calendar-wrap">
             <!-- 標題日期 -->
-            <div class="title">
+            <div class="n-title">
                 <NToggleButton
                     class="today-btn"
-                    v-model:selected="isToday"
-                    @selected="(value:boolean) => onClickThisMonthHandle(value)">今天</NToggleButton>
+                    :once="true"
+                    v-model:selected="isCurrentMonth"
+                    @selected="(value:boolean) => onClickThisMonthHandle(value)"
+                >
+                    {{ '今天' }}
+                </NToggleButton>
                 <NEventCalendarToolbar
+                    :style="{
+                        visibility: showToolbar ? 'visible' : 'hidden'
+                    }"
                     :fourMonthlyPeriod="fourMonthlyPeriod"
                     :currentDate="activeDate"
                     @click="onClickCalendarThHandle"
@@ -185,18 +204,17 @@ export default defineComponent({
                         @change="gridTypeChange"
                     />
                 </div>
-                <NSearchButton class="search-btn" @submit="searchSubmitHandle"/>
+                <NSearchButton
+                    class="search-btn"
+                    @submit="searchSubmitHandle"
+                />
             </div>
             <!-- Mobile -->
             <div
                 class="sidebar-menu"
-                @click="onClickSidebarMenuHandle"
+                @pointerup="onClickSidebarMenuHandle"
             >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M14 12C14 13.1046 13.1046 14 12 14C10.8954 14 10 13.1046 10 12C10 10.8954 10.8954 10 12 10C13.1046 10 14 10.8954 14 12Z" fill="#9F9F9F"/>
-                    <path d="M14 4C14 5.10457 13.1046 6 12 6C10.8954 6 10 5.10457 10 4C10 2.89543 10.8954 2 12 2C13.1046 2 14 2.89543 14 4Z" fill="#9F9F9F"/>
-                    <path d="M14 20C14 21.1046 13.1046 22 12 22C10.8954 22 10 21.1046 10 20C10 18.8954 10.8954 18 12 18C13.1046 18 14 18.8954 14 20Z" fill="#9F9F9F"/>
-                </svg>
+                <NSymbols name="menu" />
             </div>
             <!-- 標籤 -->
             <div
@@ -210,7 +228,8 @@ export default defineComponent({
                     :class="{
                         active: showSidebar
                     }"
-                    v-model:calendars="calendars" />
+                    v-model:calendars="calendars"
+                />
                 <div class="sidebar-driver" />
                 <!-- Mobile -->
                 <div class="grid-type-group-mobile">
@@ -221,21 +240,30 @@ export default defineComponent({
                     />
                 </div>
             </div>
-            <div class="content scroll-bar-horizontal">
+            <div
+                class="content scroll-bar-horizontal"
+                ref="contentRef"
+            >
                 <NCalendarContent
                     :gridType="gridType"
                     :activeDate="activeDate"
                     :events="events"
-                    :selected="isToday"
+                    :selected="isCurrentMonth"
                 />
             </div>
             <div
                 :class="{
-                mask: true,
-                active: showSidebar,
-            }"
+                    mask: true,
+                    active: showSidebar,
+                }"
+                @pointerup="onClickSidebarMenuHandle"
             />
         </div>
+        <NDialog
+            v-model:open="popupTips"
+            label="一周内更新资讯"
+            @close="popupTipsManager.setStatus('event-calendar-popup-tips', true)"
+        />
     </div>
 </template>
 
@@ -270,7 +298,7 @@ export default defineComponent({
     align-items: start;
     border-radius: 30px;
     border: rgba(255, 255, 255, 0.3) 1px solid;
-    padding: 30px 30px;
+    padding: 30px 20px;
     z-index: 0;
     &:before {
         content: '';
@@ -280,7 +308,7 @@ export default defineComponent({
         border-radius: 24px;
         z-index: -1;
     }
-    .title {
+    .n-title {
         width: 100%;
         height: 100%;
         min-height: 100px; // 146px
@@ -294,6 +322,7 @@ export default defineComponent({
         text-align: center;
         justify-content: space-between;
         transition: all 0.3s;
+        overflow: visible;
     }
     .sidebar-menu {
         display: none;
@@ -317,6 +346,8 @@ export default defineComponent({
         overflow: hidden;
         overflow-x: scroll;
         padding: 0 0 0 10px;
+        border-radius: 30px;
+        scroll-snap-type: x mandatory;
     }
 }
 
@@ -345,7 +376,6 @@ export default defineComponent({
         padding: 1px 1px;
         .mask {
             display: inline;
-            pointer-events: none;
             z-index: 12;
             &.active {
                 position: absolute;
@@ -363,12 +393,12 @@ export default defineComponent({
     }
     .n-calendar-wrap {
         width: 100%;
-        padding: 10px 10px;
+        padding: 8px 8px;
 
         &:before {
             inset: 8px;
         }
-        .title {
+        .n-title {
             min-height: 0;
             grid-area: 1 / 2 / auto / span 4;
             .today-btn {
@@ -380,8 +410,8 @@ export default defineComponent({
             width: 24px;
             height: 24px;
             position: absolute;
-            top: 32px;
-            left: 27px;
+            top: 30px;
+            left: 25px;
             pointer-events: auto;
             z-index: 31;
         }
@@ -416,6 +446,7 @@ export default defineComponent({
                 z-index: -1;
             }
             &.active {
+                pointer-events: auto;
                 opacity: 1;
             }
             .sidebar {
@@ -424,11 +455,16 @@ export default defineComponent({
             .sidebar-driver {
                 display: inline;
                 width: 158px;
-                border: 1px solid #DFDFDF;
+                height: 1px;
+                background: #DFDFDF;
+                margin-top: 14px;
             }
         }
         .content {
             grid-area: 2 / 1 / auto / span 4;
+            padding: 0 0 0 8px;
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
     }
     .grid-type-group {
@@ -453,8 +489,9 @@ export default defineComponent({
     .search-btn {
         position: absolute;
         //scale: 0.7;
-        right: 0;
-        width: calc(100% - 47px);
+        right: 10px;
+        width: calc(100% - 53px);
+        pointer-events: none;
     }
 
 }

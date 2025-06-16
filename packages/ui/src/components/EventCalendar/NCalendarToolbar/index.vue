@@ -1,8 +1,10 @@
 <script lang="ts">
 import { computed, defineComponent, PropType } from 'vue';
+import NTooltip from "@/components/EventCalendar/Tips/NTooltip.vue";
 
 export default defineComponent({
     name: 'NEventCalendarToolbar',
+    components: { NTooltip },
     props: {
         fourMonthlyPeriod: {
             type: Array as PropType<{ key: string, isUpdate: boolean }[]>,
@@ -23,6 +25,7 @@ export default defineComponent({
             }) => ({ date: new Date(key), isUpdate }));
             return monthly.sort((a, b) => a.date.getTime() - b.date.getTime());
         });
+
         const padStart = (value: number) => value.toString().padStart(2, '0');
         return {
             padStart,
@@ -47,13 +50,20 @@ export default defineComponent({
             <div
                 :class="{
                     'calendar-th': true,
-                    'updated': isUpdate,
                     active: date.getMonth() === currentDate.getMonth(),
+                    current: new Date('2024/08/02').getMonth() === date.getMonth()
                 }"
                 @click="onClickHandle(`${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`)"
             >
                 <div class="month-name">{{ padStart(date.getMonth() + 1) }}</div>
                 <div class="year-digits">{{ date.getFullYear() }}</div>
+                <NTooltip
+                    v-if="isUpdate"
+                    class="updated-tooltip"
+                    label="一周内更新资讯"
+                >
+                    <div class="updated" />
+                </NTooltip>
             </div>
             <div v-if="index !== fourMonthly.length - 1" class="divider"/>
         </template>
@@ -115,8 +125,13 @@ export default defineComponent({
             line-height: 29px;
             margin-top: -10px;
         }
-        &.updated:after {
-            content: '';
+        .updated-tooltip {
+            width: 20px;
+            height: 20px;
+            top: -6px;
+            left: -6px;
+        }
+        .updated {
             width: 20px;
             height: 20px;
             position: absolute;
@@ -124,9 +139,6 @@ export default defineComponent({
             border: white 2px solid;
             border-radius: 50%;
             box-shadow: 0 4px 4px 0 #00000040;
-            z-index: 30;
-            top: -6px;
-            left: -6px;
         }
     }
 
@@ -141,7 +153,9 @@ export default defineComponent({
 @media (max-width: 959px) {
     .tool-bar-container {
         min-width: 230px;
+        height: 65px;
         gap: 10px;
+        padding-right: 30px;
 
         .calendar-th {
             width: 47px;
@@ -162,9 +176,20 @@ export default defineComponent({
                 margin-top: -20px;
 
             }
+            .updated-tooltip {
+                display: none;
+            }
             &.active {
-                background: rgba(241, 86, 36, 0.8);
                 border: 1px solid #F15624;
+                .month-name {
+                    color: #DFDFDF;
+                }
+                .year-digits {
+                    color: #DFDFDF;
+                }
+            }
+            &.current {
+                background: rgba(241, 86, 36, 0.8);
                 .month-name {
                     color: white;
                 }
@@ -172,7 +197,7 @@ export default defineComponent({
                     color: white;
                 }
             }
-            &.updated:after {
+            .updated {
                 display: none;
             }
         }

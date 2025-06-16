@@ -1,17 +1,19 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
-import SwitchButton from "../Button/SwitchButton.vue";
-import { ICalendars } from "@/components/EventCalendar/useEventCalendar";
+import SwitchButton from '../Button/SwitchButton.vue';
+import { ICalendars } from '../useEventCalendar';
 
 export default defineComponent({
     name: 'NSidebar',
+    components: {
+        SwitchButton
+    },
     props: {
         calendars: {
             type: Array as PropType<Array<ICalendars>>,
             default: () => [],
         }
     },
-    components: { SwitchButton },
     emits: ['update:calendars'],
     setup(props, { emit }) {
         const handle = (value: { checked: boolean, id: string }, index: number) => {
@@ -38,8 +40,8 @@ export default defineComponent({
                 <span
                     class="tag"
                     :style="{
-                        background: item.color,
-                        opacity: item.checked ? 1 : 0
+                        background: `${item.color}${item.checked ? '' : '10'}`,
+                        borderColor: item.color
                     }"/>
                 <SwitchButton
                     :id="`tag-${ i }`"
@@ -119,7 +121,7 @@ export default defineComponent({
         display: flex;
         align-items: center;
         justify-content: center;
-
+        border: 2px transparent solid;
     }
 }
 @media (max-width: 1023px) {
@@ -129,6 +131,8 @@ export default defineComponent({
         .calendars {
             align-items: center;
             justify-content: space-evenly;
+            height: 44px;
+            padding: 0 0;
         }
         .text {
             width: 70px;

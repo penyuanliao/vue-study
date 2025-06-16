@@ -1,10 +1,14 @@
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent } from 'vue';
 
 export default defineComponent({
     name: 'NToggleButton',
     props: {
         selected: {
+            type: Boolean,
+            default: false
+        },
+        once: {
             type: Boolean,
             default: false
         }
@@ -13,9 +17,11 @@ export default defineComponent({
     setup(props, { emit }) {
         const onSelectedHandle = () => {
             const selected = !props.selected;
+            if (!selected && props.once) return;
             emit('update:selected', selected);
             emit('selected', selected);
-        }
+        };
+
         return {
             onSelectedHandle
         };
@@ -31,7 +37,7 @@ export default defineComponent({
             selected
         }"
     >
-        <slot/>
+        <slot />
     </div>
 </template>
 

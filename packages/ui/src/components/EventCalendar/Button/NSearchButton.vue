@@ -1,11 +1,14 @@
 <script lang="ts">
-import { defineComponent, onMounted, ref, watch, nextTick, computed } from 'vue';
-import NSearchFilterTags from "@/components/EventCalendar/Button/NSearchFilterTags.vue";
-import NClearInput from "@/components/EventCalendar/Button/NClearInput.vue";
+import { defineComponent, onMounted, ref } from 'vue';
+import NClearInput from './NClearInput.vue';
+import NSymbols from './NSymbols.vue';
 
 export default defineComponent({
     name: 'NSearchButton',
-    components: { NClearInput, NSearchFilterTags },
+    components: {
+        NSymbols,
+        NClearInput
+    },
     props: {
         width: {
             type: Number,
@@ -16,9 +19,8 @@ export default defineComponent({
             default: 65
         }
     },
-    emits: ['submit'],
+    emits: ['submit', 'open'],
     setup(props, { emit }) {
-
         const searchContainer = ref<HTMLDivElement>();
         const searchTags = ref<string[]>([]);
         const inputValue = ref<string>('');
@@ -37,33 +39,35 @@ export default defineComponent({
                 isOpened.value = true;
 
                 if (inputValue.value.length === 0) {
-
                     isOpened.value = !isOpened.value;
                     isSearching.value = false;
                 }
-
             } else {
                 isOpened.value = !isOpened.value;
                 isSearching.value = false;
             }
-        }
+            emit('open', isOpened.value);
+        };
         const onInputChangeHandle = (inputStr: string) => {
-            console.log("onInputChangeHandle", inputStr);
-        }
-        onMounted(() => {
+            console.log('onInputChangeHandle', inputStr);
+        };
+        const resize = () => {
             const container = searchContainer.value;
             if (container) {
                 if (window.innerWidth < 959) {
                     container.style.setProperty('--search-button-width', `${window.innerWidth}px`);
+                    container.style.setProperty('--search-button-height', `${40}px`);
                 } else {
                     container.style.setProperty('--search-button-width', `${props.width}px`);
+                    container.style.setProperty('--search-button-height', `${props.height}px`);
                 }
-
-                container.style.setProperty('--search-button-height', `${props.height}px`);
             }
+        };
+
+        onMounted(() => {
+            window.addEventListener('resize', resize);
+            resize();
         });
-
-
         return {
             searchContainer,
             inputValue,
@@ -104,10 +108,7 @@ export default defineComponent({
             @pointerup="onOpenHandle"
         >
             <span class="search-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 23 23" fill="none">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M10 0.25C4.61522 0.25 0.25 4.61522 0.25 10C0.25 15.3848 4.61522 19.75 10 19.75C15.3848 19.75 19.75 15.3848 19.75 10C19.75 4.61522 15.3848 0.25 10 0.25ZM1.75 10C1.75 5.44365 5.44365 1.75 10 1.75C14.5563 1.75 18.25 5.44365 18.25 10C18.25 14.5563 14.5563 18.25 10 18.25C5.44365 18.25 1.75 14.5563 1.75 10Z" fill="currentColor"/>
-                    <path d="M18.5304 17.4698C18.2375 17.1769 17.7626 17.1769 17.4697 17.4698C17.1768 17.7626 17.1768 18.2375 17.4697 18.5304L21.4696 22.5304C21.7625 22.8233 22.2374 22.8233 22.5303 22.5304C22.8232 22.2375 22.8232 21.7626 22.5303 21.4697L18.5304 17.4698Z" fill="currentColor"/>
-                </svg>
+                <NSymbols name="search" width="100%" height="100%" />
             </span>
         </div>
     </div>
@@ -135,9 +136,10 @@ export default defineComponent({
     cursor: pointer;
     z-index: 10;
     border-radius: 999px;
+    pointer-events: auto;
     .search-icon {
-        width: 100%;
-        height: 100%;
+        width: 24px;
+        height: 24px;
         position: relative;
         display: flex;
         align-items: center;
@@ -182,6 +184,20 @@ export default defineComponent({
     font-weight: 700;
     &.active {
         width: 100%;
+    }
+}
+
+@media (max-width: 959px) {
+    .calendar-search-button {
+        .search-icon {
+            width: 14px;
+            height: 14px;
+        }
+        &.active:after {
+            width: calc(var(--search-button-height, 65px) - 8px);
+            height: calc(var(--search-button-height, 65px) - 8px);
+
+        }
     }
 }
 

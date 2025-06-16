@@ -1,5 +1,5 @@
 <script lang="ts">
-import { computed, defineComponent, onMounted, ref, watch } from "vue";
+import { computed, defineComponent, onMounted, ref, watch } from 'vue';
 import EventTitle from './EventTitle.vue';
 
 export default defineComponent({
@@ -31,10 +31,8 @@ export default defineComponent({
         const firstDayOfMonth = computed(() => new Date(props.activeDate.getFullYear(), props.activeDate.getMonth(), 1).getDay());
         const isWeekend = (day: number): boolean => ((firstDayOfMonth.value + (day - 1)) % 7 % 6) === 0;
         // 該月份是否為當月
-        const isThisMonth = computed(() => {
-            return currentDate.getMonth() === props.activeDate.getMonth()
-                && currentDate.getFullYear() === props.activeDate.getFullYear();
-        });
+        const isThisMonth = computed(() => currentDate.getMonth() === props.activeDate.getMonth()
+            && currentDate.getFullYear() === props.activeDate.getFullYear());
 
         const hasSmall = computed(() => props.gridType === 'small');
         // 檢查活動是否開始
@@ -47,28 +45,7 @@ export default defineComponent({
             const lastDay = time.getDate() > (31 - daysInMonth.value); // 超過該月份最後N天
             if (time.getFullYear() > props.activeDate.getFullYear() && lastDay) return true;
             return (time.getMonth() !== props.activeDate.getMonth() && lastDay);
-        }
-        // 活動開始位置
-        const eventStartOffset = (startTime: string):number => {
-            const time = new Date(startTime);
-            if ((time.getFullYear() < props.activeDate.getFullYear())
-                || (time.getMonth() < props.activeDate.getMonth())) {
-                return 1;
-            }
-            return time.getDate();
-        }
-        // 活動結束位置
-        const eventEndedOffset = (startTime: string, endedTime: string): number => {
-            const start = new Date(startTime);
-            const ended = new Date(endedTime);
-            if ((ended.getFullYear() > props.activeDate.getFullYear())
-                || (ended.getMonth() > props.activeDate.getMonth())) {
-                return daysInMonth.value + 1;
-            }
-            const startDay: number = start.getMonth() !== props.activeDate.getMonth() ? 0 : start.getDate() - 1;
-            const space = (ended.getDate() - startDay) + 1;
-            return Math.max(space, 2);
-        }
+        };
         const gridColumn = (startTime: string, endedTime: string, index: number): string => {
             const start = new Date(startTime);
             const ended = new Date(endedTime);
@@ -89,18 +66,18 @@ export default defineComponent({
             }
             // row-start / column-start / row-end / column-end
             return `${index} / ${offset} / auto / span ${space}`;
-        }
+        };
+
         onMounted(() => {
             if (container.value) {
-                container.value.style.setProperty('--days-in-next-month', 31 - daysInMonth.value);
+                container.value.style.setProperty('--days-in-next-month', `${31 - daysInMonth.value}`);
             }
         });
         watch(() => daysInMonth.value, (value) => {
             if (container.value) {
-                container.value.style.setProperty('--days-in-next-month', 31 - value);
+                container.value.style.setProperty('--days-in-next-month', `${31 - value}`);
             }
-        })
-
+        });
         return {
             container,
             currentDate,
@@ -112,8 +89,6 @@ export default defineComponent({
             hasSmall,
             isContinued,
             isContinuing,
-            eventStartOffset,
-            eventEndedOffset,
             gridColumn
         };
     }
@@ -166,58 +141,34 @@ export default defineComponent({
                     :key="i"
                     class="item"
                     :class="{
-                        'continued': isContinued(event.startTime),
-                        'continuing': isContinuing(event.endedTime),
-                        'updated': event.isUpdate,
                         'item-small': hasSmall,
-                        'icon': eventEndedOffset(event.startTime, event.endedTime) <= 3
+                        'hidden': !event.calendar.checked
                     }"
                     :style="{
-                        'display': event.calendar.checked ? 'block' : 'none',
                         'grid-area': `${event.area.rowStart} / ${event.area.columnStart} / auto / span ${event.area.span}`,
-                        'background': `${event.color}`
                     }"
                 >
                     <EventTitle
-                        v-if="eventEndedOffset(event.startTime, event.endedTime) > 3"
+                        :class="{
+                            'updated': event.isUpdate,
+                            'continued': isContinued(event.startTime),
+                            'continuing': isContinuing(event.endedTime),
+                        }"
+                        :columnStart="event.area.columnStart"
+                        :span="event.area.span"
                         :title="event.title"
                         :startTime="event.startTime"
                         :endedTime="event.endedTime"
                         :eventDesc="event.eventDesc"
                         :small="hasSmall"
+                        :tag="event.coTag"
+                        :link="event.link"
+                        :color="event.color"
                     >
-                        <template #coTag v-if="event.coTag">
-                            <svg
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    fill-rule="evenodd"
-                                    clip-rule="evenodd"
-                                    d="M14.0254 5.75812C13.3929 3.74729 10.6071 3.74729 9.97458 5.75812C9.8844 6.0448 9.63594 6.21631 9.38004 6.21631C7.27098 6.21631 6.5079 8.93003 8.12023 10.1401C8.3424 10.3068 8.44667 10.6157 8.35535 10.906C8.04546 11.8912 8.44292 12.8128 9.12096 13.3217C9.80252 13.8332 10.8037 13.9498 11.6406 13.3217C11.8566 13.1595 12.1434 13.1595 12.3594 13.3217C13.1963 13.9498 14.1975 13.8332 14.879 13.3217C15.5571 12.8128 15.9545 11.8912 15.6447 10.906C15.5533 10.6157 15.6576 10.3068 15.8798 10.1401C17.4921 8.93003 16.729 6.21631 14.62 6.21631C14.3641 6.21631 14.1156 6.0448 14.0254 5.75812ZM9.38004 7.71631C10.3176 7.71631 11.1268 7.09399 11.4055 6.20819C11.5976 5.59727 12.4024 5.59727 12.5945 6.20819C12.8732 7.09399 13.6824 7.71631 14.62 7.71631C14.91 7.71631 15.1265 7.89471 15.2145 8.17451C15.303 8.45601 15.2307 8.75176 14.9794 8.9404C14.236 9.49829 13.9363 10.4739 14.2138 11.3561C14.3162 11.6818 14.1936 11.9606 13.9786 12.122C13.7672 12.2807 13.5024 12.304 13.2598 12.122C12.5103 11.5594 11.4897 11.5594 10.7402 12.122C10.4976 12.304 10.2328 12.2807 10.0214 12.122C9.80639 11.9606 9.68379 11.6818 9.78623 11.3561C10.0637 10.4739 9.76396 9.49829 9.02062 8.9404C8.76928 8.75176 8.69695 8.45601 8.7855 8.17451C8.87351 7.89471 9.08997 7.71631 9.38004 7.71631Z"
-                                    fill="white"
-                                />
-                                <path
-                                    fill-rule="evenodd"
-                                    clip-rule="evenodd"
-                                    d="M12 0.25C7.16751 0.25 3.25 4.16751 3.25 9C3.25 11.1147 4.00107 13.0556 5.25004 14.5682L5.25 20.4389C5.24994 21.1694 5.2499 21.8022 5.32055 22.2768C5.39181 22.7554 5.57441 23.3562 6.19277 23.6328C6.8017 23.9052 7.3734 23.6551 7.78705 23.4002C8.20088 23.1452 8.69302 22.7349 9.26519 22.258L10.2489 21.438C10.796 20.982 11.154 20.6853 11.4511 20.4945C11.7302 20.3153 11.88 20.2807 12 20.2807C12.12 20.2807 12.2698 20.3153 12.5489 20.4945C12.846 20.6853 13.204 20.982 13.7511 21.438L14.7348 22.2579C15.307 22.7349 15.7991 23.1452 16.2129 23.4002C16.6266 23.6551 17.1983 23.9052 17.8072 23.6328C18.4256 23.3562 18.6082 22.7554 18.6795 22.2768C18.7501 21.8022 18.7501 21.1694 18.75 20.4389L18.75 14.5682C19.9989 13.0556 20.75 11.1147 20.75 9C20.75 4.16751 16.8325 0.25 12 0.25ZM4.75 9C4.75 4.99594 7.99594 1.75 12 1.75C16.0041 1.75 19.25 4.99594 19.25 9C19.25 10.8392 18.5661 12.5168 17.4377 13.7953C16.1081 15.3017 14.1653 16.25 12 16.25C9.83492 16.25 7.89222 15.3019 6.56267 13.7958C5.43402 12.5172 4.75 10.8394 4.75 9ZM6.8042 22.0559C6.75204 21.7055 6.75 21.1869 6.75 20.3787V16.0005C8.21211 17.0986 10.0302 17.75 12 17.75C13.9698 17.75 15.7879 17.0986 17.25 16.0005V20.3787C17.25 21.1869 17.248 21.7055 17.1958 22.0559C17.1857 22.1241 17.175 22.1758 17.1653 22.2144C17.1247 22.1955 17.0704 22.1667 16.9999 22.1232C16.6891 21.9317 16.2802 21.5933 15.6503 21.0683L14.6767 20.2568C14.174 19.8378 13.7445 19.4797 13.3595 19.2324C12.9476 18.9679 12.5142 18.7807 12 18.7807C11.4858 18.7807 11.0524 18.9679 10.6405 19.2324C10.2555 19.4797 9.82595 19.8378 9.32328 20.2568L8.34973 21.0683C7.7198 21.5933 7.31089 21.9317 7.0001 22.1232C6.92957 22.1667 6.87531 22.1955 6.83474 22.2144C6.82498 22.1758 6.81435 22.1241 6.8042 22.0559ZM17.1282 22.3173C17.128 22.3168 17.1298 22.3131 17.1343 22.3075C17.1306 22.3149 17.1283 22.3177 17.1282 22.3173ZM17.2565 22.2487C17.2627 22.2488 17.2662 22.2495 17.2664 22.2499C17.2666 22.2502 17.2635 22.2502 17.2565 22.2487ZM6.73359 22.2499C6.73378 22.2495 6.73725 22.2488 6.74345 22.2487C6.7365 22.2502 6.7334 22.2502 6.73359 22.2499ZM6.87184 22.3173C6.87203 22.3168 6.87017 22.3131 6.86573 22.3075C6.86619 22.3084 6.86663 22.3093 6.86704 22.3101C6.86995 22.3156 6.87168 22.3177 6.87184 22.3173Z"
-                                    fill="white"
-                                />
-                            </svg>
-                        </template>
-                    </EventTitle>
-                    <EventTitle
-                        v-else
-                        title=""
-                        startTime=""
-                        endedTime=""
-                        eventDesc=""
-                        :small="hasSmall"
-                    >
-                        <template #icon>
+                        <template
+                            #icon
+                            v-if="event.area.span <= 3"
+                        >
                             <svg
                                 width="14"
                                 height="19"
@@ -234,17 +185,6 @@ export default defineComponent({
                     </EventTitle>
                 </div>
             </div>
-            <div class="grid-content-rows">
-
-                <div
-                    class="item"
-                    :style="{
-                        'grid-row': '1 / span 4',
-                        'grid-column': 1,
-                    }"
-                >
-                </div>
-            </div>
         </div>
     </div>
 </template>
@@ -259,7 +199,7 @@ export default defineComponent({
     width: 100%;
     height: 100%;
     display: flex;
-    min-height: 776px;
+    min-height: 300px; // 776px
     max-width: calc(var(--daily-timeline-size) * var(--days-in-month, 32));
     flex-direction: column;
 }
@@ -324,7 +264,7 @@ export default defineComponent({
                 white calc(var(--daily-timeline-size) - 1px),
                 white var(--daily-timeline-size)
         );
-        padding: 28px 0;
+        padding: 28px 0 40px;
     }
     &.grid:after {
         content: '';
@@ -365,118 +305,43 @@ export default defineComponent({
         //overflow: hidden;
         /** 白線 */
         margin-right: 1px;
-        grid-template-rows: repeat(23, 90px);
+        grid-template-rows: repeat(10, 90px);
         &.small {
-            grid-template-rows: repeat(23, 40px);
+            grid-template-rows: repeat(10, 40px);
         }
 
         .item {
             position: relative;
-            background-color: #FFDD48;
-            height: 80px;
-            border-radius: 20px;
+            min-width: 0;
+            height: 80px; // pc: 80, mobile: 60
             text-align: center;
-            margin: 5px 10px;
+            margin: 5px 0;
             z-index: 10;
-            transition: height 0.2s ease;
-            &.continued {
-                margin-left: 0;
-                // margin-right: 10px;
-                border-top-left-radius: 0;
-                border-bottom-left-radius: 0;
+            transition: all 0.3s;
+            display: block;
+            &.hidden {
+                display: none;
             }
-            &.continuing {
-                margin-right: 1px;
-                border-top-right-radius: 0;
-                border-bottom-right-radius: 0;
+            &:hover {
+                z-index: 30;
             }
-
         }
         .item-small {
             height: 30px;
         }
     }
 
-
-    .updated:after {
-        content: '';
-        width: 20px;
-        height: 20px;
-        position: absolute;
-        background: #FF0000;
-        border: white 2px solid;
-        border-radius: 50%;
-        box-shadow: 0 4px 4px 0 #00000040;
-        z-index: 30;
-        top: -6px;
-        left: -6px;
-    }
     .center {
         top: calc(1 / 2 * 100%);
         left: calc(1 / 2 * 100%);
         transform: translateX(calc(calc(1 / 2 * 100%) * -1)) translateY(calc(calc(1 / 2 * 100%) * -1));
     }
 }
+
 .hidden {
     display: none;
 }
 @media (max-width: 959px) {
-    .calendar-content {
-        min-height: 0;
-        max-width: 100%;
-        max-height: calc(var(--daily-timeline-size) * var(--days-in-month, 32));
-        flex-direction: row;
-    }
-    .calendar-title {
-        .daily-timeline {
-            flex-direction: column;
-            padding: calc(var(--daily-timeline-size) / 2) 0 0;
-            padding-right: 12px;
-            div {
-                width: 100%;
-                height: var(--daily-timeline-size);
-                line-height: var(--daily-timeline-size);
-            }
-        }
-    }
-    .calendar-wrap {
-        &.grid {
-            width: 100%;
-            min-width: 0;
-            height: calc(var(--daily-timeline-size) * var(--days-in-month, 32));
-            background: repeating-linear-gradient(
-                    to bottom,
-                    #DFDFDF 0px,
-                    #DFDFDF calc(var(--daily-timeline-size) - 1px),
-                    white calc(var(--daily-timeline-size) - 1px),
-                    white var(--daily-timeline-size)
-            );
-            padding: 0 28px;
-        }
-        &.grid:after {
-            visibility: hidden;
-        }
-        .grid-content {
-            display: none;
-        }
-        .grid-content-rows {
-            display: grid;
-            grid-template-rows: repeat(var(--days-in-month, 32), var(--daily-timeline-size));
-            overflow: hidden;
-            /** 白線 */
-            margin-right: 1px;
-            .item {
-                position: relative;
-                width: calc(var(--daily-timeline-size) * 2);
-                background-color: #FFDD48;
-                border-radius: 20px;
-                text-align: center;
-                margin: 5px 10px;
-                z-index: 10;
-                transition: height 0.2s ease;
 
-            }
-        }
-    }
 }
 </style>

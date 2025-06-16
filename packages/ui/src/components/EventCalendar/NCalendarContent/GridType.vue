@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, ref, watch } from 'vue';
 
 export default defineComponent({
     name: 'GridType',
@@ -12,7 +12,7 @@ export default defineComponent({
     },
     setup(props) {
         const layout = ref(props.selected);
-        watch(()=> props.selected, (value) => {
+        watch(() => props.selected, (value) => {
             layout.value = value;
         });
         return { layout };
@@ -148,4 +148,9 @@ input {
     display: none;
 }
 
+@media (max-width: 959px) {
+    .button-group {
+        height: 64px;
+    }
+}
 </style>
