@@ -33,7 +33,7 @@ export default defineComponent({
         const apiData = ref(json);
         const current = ref<any>(null);
         const now = new Date('2024/6/1');
-        const popupTips = ref<boolean>(!popupTipsManager.getStatus('event-calendar-popup-tips'));
+        const popupTips = ref<boolean>(false);
         const isCurrentMonth = ref<boolean>(false);
         const activeDate = ref<Date>(new Date('2024/08/02')); // safari 要到日不能只有月份
         const calendars = ref<ICalendars[]>([]);
@@ -61,6 +61,7 @@ export default defineComponent({
         const showToolbar = ref<boolean>(true);
         const isDeflate = ref<boolean>(true);
         const contentRef = ref<HTMLElement|null>(null);
+        const touchManager = useNTouchMove();
 
         const setData = (month: string) => {
             if (+month === 5) {
@@ -91,10 +92,13 @@ export default defineComponent({
                 events.value = current.value?.events;
 
             } else {
-                events.value = events.value.filter(({ title, eventDesc }: IEvents) => {
+                events.value = current.value?.events.filter(({ title, eventDesc }: IEvents) => {
                     return title.includes(value) || eventDesc.includes(value);
                 });
             }
+        };
+        const onSearchOpenHandle = (value: boolean) => {
+            // showToolbar.value = !value;
         };
         const onClickSidebarMenuHandle = () => {
             showSidebar.value = !showSidebar.value;
@@ -111,6 +115,7 @@ export default defineComponent({
             calendars.value = eventCalendar.calendars;
             events.value = eventCalendar.events;
             current.value = eventCalendar;
+            touchManager.clear();
         };
 
         const onClickThisMonthHandle = (bool: boolean) => {
@@ -127,12 +132,16 @@ export default defineComponent({
                     calendars.value = eventCalendar.calendars;
                     events.value = eventCalendar.events;
                     current.value = eventCalendar;
+                    touchManager.clear();
                 }
             });
         };
 
 
         onMounted(() => {
+
+            touchManager.setup(contentRef.value);
+
             fourMonthlyPeriod.value.forEach((item, index) => {
                 const [ year, month ] = item.key.split("/");
                 const act: Date = new Date(item.key);
@@ -146,11 +155,13 @@ export default defineComponent({
                     current.value = eventCalendar;
                     console.log('events:', events.value);
                     console.log('monthIsUpdate:', eventCalendar.monthIsUpdate);
+                    touchManager.clear();
+
                 }
             });
+            popupTips.value = !popupTipsManager.getStatus('event-calendar-popup-tips');
             console.log("contentRef", contentRef.value);
-            const { manager } = useNTouchMove();
-            manager().setup(contentRef.value);
+
 
         });
         return {
@@ -167,6 +178,7 @@ export default defineComponent({
             handle,
             gridTypeChange,
             searchSubmitHandle,
+            onSearchOpenHandle,
             onClickThisMonthHandle,
             onClickCalendarThHandle,
             onClickSidebarMenuHandle,
@@ -207,6 +219,7 @@ export default defineComponent({
                 <NSearchButton
                     class="search-btn"
                     @submit="searchSubmitHandle"
+                    @open="onSearchOpenHandle"
                 />
             </div>
             <!-- Mobile -->
@@ -333,7 +346,7 @@ export default defineComponent({
     }
     .sidebar-collapse {
         grid-column: 1 / span 1;
-        margin-right: 20px;
+        margin-right: 4px;
         max-width: 220px;
 
         .sidebar-driver {
@@ -350,7 +363,8 @@ export default defineComponent({
         overflow: hidden;
         overflow-x: scroll;
         padding: 0 0 0 10px;
-        border-radius: 30px;
+        border-bottom-left-radius: 24px;
+        border-bottom-right-radius: 24px;
         scroll-snap-type: x mandatory;
     }
 }
@@ -398,6 +412,7 @@ export default defineComponent({
     .n-calendar-wrap {
         width: 100%;
         padding: 8px 8px;
+        overflow: hidden;
 
         &:before {
             inset: 8px;

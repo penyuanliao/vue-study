@@ -78,7 +78,7 @@ export default defineComponent({
     width: 100%;
     max-width: 770px;
     min-width: 390px;
-    margin: 0 auto;
+    //margin: 0 auto;
     position: relative;
     display: flex;
     flex-direction: row;
@@ -106,6 +106,7 @@ export default defineComponent({
         flex-direction: column;
         text-align: center;
         color: #DFDFDF;
+        cursor: pointer;
         &:active,
         &.active {
             color: #F15624;

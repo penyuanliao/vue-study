@@ -2,10 +2,12 @@
 import { defineComponent, onMounted, ref } from 'vue';
 import NClearInput from './NClearInput.vue';
 import NSymbols from './NSymbols.vue';
+import NSearchFilterTags from "@/components/EventCalendar/Button/NSearchFilterTags.vue";
 
 export default defineComponent({
     name: 'NSearchButton',
     components: {
+        NSearchFilterTags,
         NSymbols,
         NClearInput
     },
@@ -32,7 +34,6 @@ export default defineComponent({
 
         // 開啟搜尋
         const onOpenHandle = () => {
-            console.log('onOpenHandle', isOpened.value);
             if (isOpened.value) {
                 isSearching.value = true;
                 emit('submit', inputValue.value);
@@ -50,11 +51,12 @@ export default defineComponent({
         };
         const onInputChangeHandle = (inputStr: string) => {
             console.log('onInputChangeHandle', inputStr);
+            onOpenHandle();
         };
         const resize = () => {
             const container = searchContainer.value;
             if (container) {
-                if (window.innerWidth < 959) {
+                if (window.innerWidth < 960) {
                     container.style.setProperty('--search-button-width', `${window.innerWidth}px`);
                     container.style.setProperty('--search-button-height', `${40}px`);
                 } else {
@@ -92,9 +94,15 @@ export default defineComponent({
                 'active': isOpened
             }"
         >
+            <NSearchFilterTags
+                :tags="[]"
+                :class="{
+                    'tags-input-hidden': true
+                }"
+            />
             <NClearInput
-                class="clear-input"
                 v-if="isOpened"
+                class="clear-input"
                 v-model:inputValue="inputValue"
                 @change="onInputChangeHandle"
             />
@@ -116,6 +124,11 @@ export default defineComponent({
 
 <style scoped lang="scss">
 @use '../theme';
+.tags-input-hidden {
+    width: 0;
+    overflow: hidden;
+    display: none;
+}
 
 .search-button-container {
     width: var(--search-button-width, 265px);

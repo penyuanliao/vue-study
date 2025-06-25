@@ -89,7 +89,7 @@ export default defineComponent({
         height: 94px;
         align-items: flex-start;
         gap: 14px;
-        padding: 11px 0;
+        padding: 11px 0 11px 10px;
     }
     .text {
         width: 100%;// 176px;

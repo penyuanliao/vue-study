@@ -21,7 +21,7 @@ export default defineComponent({
         const onCloseHandle = () => {
             emit('update:open', false);
             emit('close');
-        }
+        };
         return {
             onCloseHandle
         };
@@ -38,14 +38,22 @@ export default defineComponent({
             <section class="dialog-content">
                 <div class="desc-picture">
                     <div class="desc-rect">
-                        <NSymbols class="bookmark" name="bookmark" />
+                        <NSymbols
+                            class="bookmark"
+                            name="bookmark"
+                        />
                         <div class="mask" />
                         <div class="updated" />
                     </div>
                 </div>
                 <div class="column">
                     <div class="tips-icon">
-                        <NSymbols class="svg" width="15" height="15" name="tips" />
+                        <NSymbols
+                            class="svg"
+                            width="15"
+                            height="15"
+                            name="tips"
+                        />
                         <span>Tips</span>
                     </div>
                     <div class="tips-label">{{ label }}</div>
@@ -133,7 +141,20 @@ export default defineComponent({
         user-select: none;
     }
 }
-
+.tips-label {
+    width: 100%;
+    color: white;
+    font-weight: 700;
+    font-size: 24px;
+    text-align: left;
+    text-overflow: ellipsis;
+    overflow:hidden;
+    white-space: nowrap;
+    line-height: 29px;
+    padding: 14px 0;
+    cursor: default;
+    user-select: none;
+}
 .desc-picture {
     min-width: 118px;
     height: 100%;
@@ -173,6 +194,7 @@ export default defineComponent({
         }
     }
 }
+/* Transition 動畫 */
 .dialog-enter-from,
 .dialog-leave-to {
     opacity: 0;
@@ -180,20 +202,5 @@ export default defineComponent({
 .dialog-enter-to,
 .dialog-leave-from {
     opacity: 1;
-}
-
-.tips-label {
-    width: 100%;
-    color: white;
-    font-weight: 700;
-    font-size: 24px;
-    text-align: left;
-    text-overflow: ellipsis;
-    overflow:hidden;
-    white-space: nowrap;
-    line-height: 29px;
-    padding: 14px 0;
-    cursor: default;
-    user-select: none;
 }
 </style>

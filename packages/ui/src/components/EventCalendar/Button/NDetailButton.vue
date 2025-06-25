@@ -60,7 +60,7 @@ export default defineComponent({
         color: var(--detail-bg-color, white);
     }
 
-    &:hover {
+    &:active {
         border-color: white;
         background-color: var(--detail-bg-color, white);
         .label {
