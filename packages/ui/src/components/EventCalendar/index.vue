@@ -323,6 +323,10 @@ export default defineComponent({
         justify-content: space-between;
         transition: all 0.3s;
         overflow: visible;
+        max-width: calc(46px * 32);
+        margin: 0 auto;
+        padding-left: 5px;
+        flex-shrink: 0;
     }
     .sidebar-menu {
         display: none;
