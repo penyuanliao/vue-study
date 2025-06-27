@@ -209,7 +209,7 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
             };
             if (isUpdate) monthIsUpdate = true;
             if (isDeflate) deflateRow(event);
-            events.push(event);
+            if (new Date(start_at).getFullYear() === activeDate.getFullYear()) events.push(event);
         });
         return { events, monthIsUpdate };
     };

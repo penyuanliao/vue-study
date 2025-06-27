@@ -57,6 +57,7 @@ export default defineComponent({
                 isUpdate: true
             }
         ]);
+        const searchString = ref<string>('');
         const showSidebar = ref<boolean>(false);
         const showToolbar = ref<boolean>(true);
         const isDeflate = ref<boolean>(true);
@@ -88,6 +89,7 @@ export default defineComponent({
         };
         const searchSubmitHandle = (value: string) => {
             console.log(`searchSubmitHandle: ${value}`);
+            searchString.value = value;
             if (value === '') {
                 events.value = current.value?.events;
 
@@ -98,7 +100,13 @@ export default defineComponent({
             }
         };
         const onSearchOpenHandle = (value: boolean) => {
-            // showToolbar.value = !value;
+            const isMobile: boolean = (window.innerWidth < 960);
+            if (isMobile) {
+                showToolbar.value = !value;
+            } else {
+                showToolbar.value = true;
+            }
+            console.log("onSearchOpenHandle", isMobile, value);
         };
         const onClickSidebarMenuHandle = () => {
             showSidebar.value = !showSidebar.value;
@@ -116,6 +124,7 @@ export default defineComponent({
             events.value = eventCalendar.events;
             current.value = eventCalendar;
             touchManager.clear();
+            if (searchString.value) searchSubmitHandle(searchString.value);
         };
 
         const onClickThisMonthHandle = (bool: boolean) => {
@@ -340,6 +349,13 @@ export default defineComponent({
         margin: 0 auto;
         padding-left: 5px;
         flex-shrink: 0;
+        @media (max-width: 1772px) {
+            padding-left: 10px;
+        }
+        @media (max-width: 1161px) {
+            grid-column-start: 1;
+        }
+
     }
     .sidebar-menu {
         display: none;

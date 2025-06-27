@@ -63,6 +63,7 @@ export default defineComponent({
                     container.style.setProperty('--search-button-width', `${props.width}px`);
                     container.style.setProperty('--search-button-height', `${props.height}px`);
                 }
+                emit('open', isOpened.value);
             }
         };
 

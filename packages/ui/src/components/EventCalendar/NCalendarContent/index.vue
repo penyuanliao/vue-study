@@ -158,6 +158,7 @@ export default defineComponent({
                         :columnStart="event.area.columnStart"
                         :span="event.area.span"
                         :title="event.title"
+                        :activeDate="activeDate"
                         :startTime="event.startTime"
                         :endedTime="event.endedTime"
                         :eventDesc="event.eventDesc"

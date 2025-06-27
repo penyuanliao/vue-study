@@ -3,8 +3,16 @@ import { defineComponent, computed, ref, onMounted, watch, nextTick, onUnmounted
 import NSymbols from "@/components/EventCalendar/Button/NSymbols.vue";
 import useNTouchMove from "@/components/EventCalendar/NTouchMove/useNTouchMove";
 import NDetailButton from "@/components/EventCalendar/Button/NDetailButton.vue";
-export interface IEventTitleProps {
-    sizeWidth: number;
+export interface IEventTitleVars {
+    sizeWidth?: number;
+    // 開始位置
+    start: number;
+    // 頁面開始位置
+    offsetStart: number;
+    // 頁面結束位置
+    offsetEnded: number;
+    // 總長度
+    totalLength: number;
     // 開始頁面位置
     startPage: number;
     // 開始位置佔空間
@@ -13,6 +21,9 @@ export interface IEventTitleProps {
     endedPage: number;
     // 結束位置佔空間
     endedSpan: number;
+    endedBack: number;
+    // 該頁佔據
+    currSpan: number;
 
 }
 export default defineComponent({
@@ -36,6 +47,10 @@ export default defineComponent({
             type: String,
             required: false,
             default: ''
+        },
+        activeDate: {
+            type: Date,
+            required: false,
         },
         startTime: {
             type: String,
@@ -82,7 +97,16 @@ export default defineComponent({
         }
     },
     setup(props, { slots }) {
-        const eventDate = computed(() => `${props.startTime.substring(0, 10)} ~ ${props.endedTime.substring(0, 10)}`);
+        const eventDate = computed(() => {
+            const now = props.activeDate ? props.activeDate : new Date();
+            const st = props.startTime.split('/');
+            const et = props.endedTime.split('/');
+            let startStart: number = 0;
+            let endStart: number = 0;
+            if (now.getFullYear() === +st[0]) startStart = 5;
+            if (st[0] === et[0]) endStart = 5;
+            return `${props.startTime.substring(startStart, 10)} ~ ${props.endedTime.substring(endStart, 10)}`;
+        });
         const container = ref<HTMLElement | null>(null);
         const titleRef = ref<HTMLElement | null>(null);
         const sectionRef = ref<HTMLElement | null>(null);
@@ -90,6 +114,7 @@ export default defineComponent({
         const isHover = ref<boolean>(false);
 
         const textWidth = ref<number>(0);
+        const eTimeWidth = ref<number>(0);
         const eTitleWidth = ref<number>(0);
         const isMobile = ref<boolean>(false);
         const direction = ref<'left' | 'right' | 'center'>('center');
@@ -97,13 +122,7 @@ export default defineComponent({
         const touchManager = useNTouchMove();
         const touchPage = computed(() => touchManager.page.value);
         // 參數
-        const range = ref<IEventTitleProps>({
-            sizeWidth: 46,
-            startPage: 0,
-            startSpan: 0,
-            endedPage: 0,
-            endedSpan: 0
-        });
+        const range = ref<IEventTitleVars>({});
         const hasCramped = ref<boolean>(false);
         // 每個位置寬度
         const layouts = {
@@ -163,10 +182,48 @@ export default defineComponent({
                 timeWidth = el.offsetWidth;
                 container.value.removeChild(el);
             }
-
+            eTimeWidth.value = timeWidth;
             return Math.max(timeWidth, descWidth);
         };
-
+        // 初始化參數
+        const setupRange = () => {
+            const cell: number = touchManager.info.value.cell;
+            const page: number = touchManager.page.value;
+            const offsetStart: number = cell * page;
+            const offsetEnded: number = cell * (page + 1);
+            const start = (props.columnStart - 1);
+            const totalLength: number = start + props.span;
+            const startPage: number = Math.floor(start / cell);
+            const startSpan: number = cell - (start % cell);
+            const endedPage: number = Math.ceil(totalLength / cell) - 1;
+            const endedBack: number = cell - 32 % cell;
+            let endedSpan: number = (start + props.span) % cell;
+            if (endedSpan === 0) endedSpan = cell;
+            let currSpan: number = 0;
+            if (startPage === page) {
+                // 開始位置寬度
+                currSpan = startSpan;
+            } else if (touchManager.page.value === endedPage) {
+                currSpan = endedSpan == 0 ? cell : endedSpan; // 結束位置寬度
+            } else {
+                currSpan = cell; // 中間位置寬度
+            }
+            range.value = {
+                sizeWidth: 46,
+                start,
+                page,
+                offsetStart,
+                offsetEnded,
+                totalLength,
+                startPage,
+                startSpan,
+                endedPage,
+                endedSpan,
+                endedBack,
+                currSpan
+            }
+        }
+        // 展開
         const onMouseEnterHandle = (event: MouseEvent) => {
             const target = container.value;//event.target as HTMLElement;
             const defSize:number = layouts.marginLeft
@@ -174,59 +231,91 @@ export default defineComponent({
                 + layouts.gap
                 + (props.icon ? (layouts.icon + layouts.gap) : 0)
                 + (props.tag ? (layouts.tag + layouts.gap) : 0);
-            if (target) {
-                const titleWidth: number = eTitleWidth.value || titleRef.value?.offsetWidth;
-                if (!isHover.value) {
-                    target.classList.add('hover');
-                    if (isMobile.value) {
-                        // 檢查頭尾padding
-                        // 補足寬度
-                        const page: number = touchManager.page.value;
-                        const { cell } = touchManager.info.value;
-                        let extra: number = ((props.columnStart - 1) % cell);
-                        const full: number = 46 * (extra <= 0 ? cell - props.span : extra);
-                        console.log(`onMouseEnterHandle
-                        columnStart: ${ props.columnStart }
-                        span: ${ props.span }
+            const titleWidth: number = eTitleWidth.value || titleRef.value?.offsetWidth;
+            if (target && !isHover.value) {
+                target.classList.add('hover');
+                if (isMobile.value) {
+                    const {
+                        sizeWidth,
+                        start,
+                        page,
+                        totalLength,
+                        startPage,
+                        startSpan,
+                        endedPage,
+                        endedSpan,
+                        offsetStart,
+                        offsetEnded,
+                        currSpan
+                    } = range.value;
+                    // 檢查頭尾padding
+                    // 補足寬度
+                    const cell = touchManager.info.value.cell;
+                    let extra: number = (start % cell);
+                    const full: number = sizeWidth * (cell - currSpan);
+                    let padding: number = 8;
+                    console.log(`onMouseEnterHandle ${props.title}
+                        start: ${start} totalLength: ${totalLength}
+                        startPage: ${startPage} startSpan: ${startSpan}
+                        endedPage: ${endedPage} endedSpan: ${endedSpan}
+                        offsetStart: ${offsetStart} offsetEnded: ${offsetEnded}
+                        currSpan: ${currSpan} full:${full}
+                        span: ${ endedSpan == 0 ? cell : endedSpan }
                         cell: ${ cell * (page + 1) } page: ${page}
-                        extra: ${ extra } full: ${full}
+
                         `);
+                    // 該頁物件是否在範圍內
+                    if (currSpan != 0) {
+                        let offset: number = start - offsetStart;
+                        const pageLimitWidth: boolean = cell - offset;
 
-                        // 該頁物件
-                        if (props.columnStart > cell * page && props.columnStart <= cell * (page + 1)) {
-                            let offset: number = (props.columnStart - 1) - (cell * page);
-                            const pageLimitWidth: boolean = cell - offset;
+                        if (offset >= 0 && pageLimitWidth > 1 && (start + pageLimitWidth) > totalLength ) {
 
-                            console.log('target.style.minWidth', offset, pageLimitWidth, (props.columnStart - 1 + pageLimitWidth), props.columnStart - 1 + props.span);
-                            if (offset > 0 && pageLimitWidth > 1 && (props.columnStart - 1 + pageLimitWidth) > props.columnStart - 1 + props.span ) {
-                                target.style.marginLeft = `-${ offset * 46 }px`;
-                                target.style.minWidth = `${touchManager.info.value.width - 8}px`; // padding-right 8px
+                            if (props.continuing && page === startPage) {
+                                padding += 10;
                             } else {
-                                target.style.minWidth = `${target.offsetWidth + full}px`; // padding-right 8px
+                                padding = 10;
                             }
+                            // 這邊檢查中間
+                            target.style.marginLeft = `-${ offset * 46 }px`;
+                            target.style.minWidth = `${touchManager.info.value.width - padding}px`; // padding-right 8px
+                        } else {
+                            if (!props.continued && page === startPage) {
+                                padding = 0;
+                            } else if (!props.continuing && page === endedPage) {
+                                console.log(`target.offsetWidth: ${target.offsetWidth} (${target.offsetWidth + full - padding})`);
 
-                        } else if (props.columnStart + props.span <= cell * (page + 1)) {
-                            extra = cell - (props.columnStart + props.span - 1) % cell;
-                            target.style.minWidth = `${target.offsetWidth + extra * 46 - 8}px`;
+                                if (page === startPage) {
+                                    padding = 10;
+                                } else {
+                                    padding = 5;
+                                }
+                            }
+                            // 右至左開
+                            // 原本大小增加
+                            target.style.minWidth = `${ target.offsetWidth + full - padding}px`;
+                            target.style.maxWidth = `${ target.offsetWidth + full - padding}px`;
                         }
-
-                    } else {
-                        console.log(`#onMouseEnterHandle ${props.title}
-                            defSize: ${defSize}
-                            textWidth: ${textWidth.value}
-                            titleWidth: ${titleWidth}
-                        `);
-                        target.style.minWidth = `${defSize + textWidth.value + titleWidth - 8}px`;
+                    } else if (totalLength <= offsetEnded) {
+                        // 左至右開
+                        console.log("左至右開");
+                        extra = cell - totalLength % cell;
+                        target.style.minWidth = `${target.offsetWidth + extra * 46 - 8}px`;
                     }
-                    target.style.zIndex = 25;
-                    isHover.value = true;
+                } else {
+                    // PC版本
+                    target.style.minWidth = `${defSize + textWidth.value + titleWidth - 8}px`;
                 }
+                target.style.zIndex = 25;
+                isHover.value = true;
             }
         };
+        // 收起來
         const onMouseLeaveHandle = (event: MouseEvent) => {
             const target = container.value;//event.target as HTMLElement;
             if (target && isHover.value) {
                 target.style.minWidth = '100%';
+                target.style.maxWidth = null;
                 target.style.marginLeft = null;
                 target.style.zIndex = null;
                 target.classList.remove('hover');
@@ -287,62 +376,71 @@ export default defineComponent({
         const sectionStyle = () => {
 
             if (!isMobile.value) return {};
+            setupRange();
+            const {
+                sizeWidth,
+                start,
+                page,
+                totalLength,
+                startPage,
+                startSpan,
+                endedPage,
+                endedSpan,
+                endedBack,
+                offsetStart,
+                offsetEnded
+            } = range.value;
 
             let visibility: string = 'visible';
             let left: number = 20; // 起始位置
 
-            const sizeWidth: number = 46;
+            let indentWidth: number = Math.max((sizeWidth * (offsetStart - start)), 0);
+            // 調整tag間距
+            if (props.tag && !props.icon) indentWidth -= 5;
 
-            const indent: number = props.columnStart - 1;
+            // 檢查是否從這頁開始
+            const between: boolean = start >= offsetStart && start <= offsetEnded;
 
-            const cell: number = Math.floor(touchManager.info.value.width / sizeWidth);
-
-            const page: number = touchManager.page.value;
-
-            const padding: number = ((touchManager.info.value.width - 13) % sizeWidth);
-
-            let indentWidth: number = Math.max((sizeWidth * ((cell * page) - indent)), 0);
-
-            // 長度
-            const len: number = (props.columnStart - 1) + props.span;
-
-            const pageStart: number = cell * page;
-            const pageSpan: number = cell * (page + 1);
-            const between: boolean = (props.columnStart - 1) >= pageStart && (props.columnStart - 1) <= pageSpan;
-
-            if (props.icon) {
-                left = 0;
-            } else if (props.continued || !between) {
-                left = 10;
+            console.log(`sectionStyle ${props.title}
+                start: ${start} totalLength: ${totalLength} cell: ${touchManager.info.value.cell}
+                startPage: ${startPage} startSpan: ${startSpan}
+                endedPage: ${endedPage} endedSpan: ${endedSpan} endedBack: ${endedBack}
+                offsetStart: ${offsetStart} offsetEnded: ${offsetEnded} between:${between}
+                `);
+            if (isHover.value) {
+                // left = 0;
+                if (props.icon) {
+                    left = 0;
+                } else if (props.continued || !between) {
+                    left = 10;
+                }
+            } else {
+                if (props.icon) {
+                    left = 0;
+                } else if (props.continued || !between) {
+                    left = 10;
+                }
+                // 開頭只有1span隱藏
+                if (!isHover.value && endedSpan === 1 && endedPage === page) {
+                    visibility = 'hidden';
+                }
             }
 
-            const extra: number = Math.max(
-                Math.floor(((sizeWidth * cell) - (touchManager.info.value.scrollWidth - touchManager.info.value.width * page)) / sizeWidth),
-                0
-            );
 
-            if (props.columnStart <= cell * page - extra) {
-                indentWidth = indentWidth - extra * sizeWidth;
-            }
-            // 不動作回到原本位置
-            if (props.columnStart <= 9 && props.columnStart + props.span <= 10) {
-                indentWidth = 0;
-            }
 
-            if (Math.ceil(len / cell) < page + 1) {
+            if (endedPage < page) {
                 indentWidth = 0;
             }
             // 移動頁面到最後只剩下1格
-            if (len - cell * page == 1 ) {
-                // indentWidth = 0;
+            if (totalLength - offsetStart === 1 ) {
                 // 隱藏內文
                 visibility = isHover.value ? 'visible' : 'hidden';
             }
 
             return {
                 visibility,
-                maxWidth: `${touchManager.info.width}px`,
-                left: `${left + indentWidth}px`
+                maxWidth: `${touchManager.info.value.width - 10}px`,
+                left: `${left + indentWidth }px`
             }
         }
         // 處理手機介面文字溢出
@@ -350,20 +448,50 @@ export default defineComponent({
             if (!isMobile.value) return {};
             const titleWidth: number = eTitleWidth.value || titleRef.value?.offsetWidth;
             const cellsNum: number = (props.columnStart + props.span -1) - touchManager.info.value.cell * touchManager.page.value;
-
-            const maxWidth: number = touchManager.info.value.width
-            - layouts.btn - titleWidth - layouts.gap * 2;
+            const {
+                sizeWidth,
+                start,
+                page,
+                totalLength,
+                startPage,
+                startSpan,
+                endedPage,
+                endedSpan,
+                offsetStart,
+                offsetEnded
+            } = range.value;
+            let maxWidth: number = touchManager.info.value.width
+            - layouts.btn - titleWidth - (layouts.gap * 2);
             const smWidth: number = (cellsNum * 46) - titleWidth - layouts.gap * 2;
+
+            if (props.tag) {
+                maxWidth -= (layouts.tag + 20);
+            }
+            if (props.icon) {
+                maxWidth -= layouts.icon;
+            }
+            console.log(`  - eventContentStyle:
+            titleWidth: ${titleWidth}
+            maxWidth: ${maxWidth}
+            smWidth: ${smWidth}
+                        `);
             if (isHover.value) {
-                return { maxWidth: `${ maxWidth - 20}px` };
+
+                if (startPage === page && endedPage === page) {
+                    maxWidth -= 20;
+                } else {
+                    maxWidth -= 20;
+                }
+
+                return { maxWidth: `${ maxWidth }px`, minWidth: `${ maxWidth }px` };
             } else {
                 return { maxWidth: `${Math.min(smWidth, maxWidth)}px` };
             }
         }
         const measureWordWidth = async (value: string) => {
             sectionRef?.value.classList.remove('section-animate'); // 切換月份時不需要動畫
-            const font: string = (window.innerWidth < 960) ? fontMobile : fontPC;
-            const titleFont: string = (window.innerWidth < 960) ? titleFontMobile : titleFontPC;
+            const font: string = (isMobile.value) ? fontMobile : fontPC;
+            const titleFont: string = (isMobile.value) ? titleFontMobile : titleFontPC;
             textWidth.value = measureTextWidth(value, props.eventDesc, font);
             eTitleWidth.value = measureTitleWidth(props.title, titleFont);
             await nextTick();
@@ -378,26 +506,17 @@ export default defineComponent({
         watch(() => eventDate.value, (value) => measureWordWidth(value));
 
         watch(() => touchPage.value, (value) => {
+            setupRange();
             const cell: number = touchManager.info.value.cell;
-            const start = (props.columnStart - 1);
-            const totalLength: number = start + props.span;
-            const startPage: number = Math.floor(start / cell);
-            const startSpan: number = cell - (start % cell);
-            const endedPage: number = Math.ceil(totalLength / cell) - 1;
-            const endedSpan: number = (start + props.span) % cell;
-            let currSpan: number = 0;
-            if (startPage === touchManager.page.value) {
-                // 開始位置寬度
-                if (props.span > startSpan) {
-                    currSpan = props.span; // 還有下一頁
-                } else {
-                    currSpan = startSpan;
-                }
-            } else if (touchManager.page.value === endedPage) {
-                currSpan = endedSpan == 0 ? cell : endedSpan; // 結束位置寬度
-            } else {
-                currSpan = cell; // 中間位置寬度
-            }
+            const {
+                start,
+                totalLength,
+                startPage,
+                startSpan,
+                endedPage,
+                endedSpan,
+                currSpan
+            } = range.value;
             const cellsWidth: number = currSpan * 46;
 
             console.log(`event-title ${props.title} isMobile: ${isMobile.value}
@@ -405,23 +524,28 @@ export default defineComponent({
             endedPage: ${endedPage} endedSpan: ${endedSpan} |currSpan: ${ currSpan }|
             page: ${value}(${touchManager.info.value.cell}) cell: ${touchManager.info.value.cell} max: ${touchManager.maxPage.value}
             width: ${touchManager.maxWidth.value} (${start + props.span})
-            cellsWidth: ${ cellsWidth } : ${ textWidth.value }
-            Return: ${cellsWidth < textWidth.value}
+            cellsWidth: ${ cellsWidth } : ${ textWidth.value } : ${eTimeWidth.value}
+            Return: ${cellsWidth < eTimeWidth.value}
             titleRef: ${titleRef?.value.offsetWidth}
             `);
             if (isMobile.value) {
+                const target = container.value;
+                target.style.minWidth = '100%';
+                target.style.marginLeft = null;
+                target.style.zIndex = null;
+
                 // 這邊檢查寬度夠不夠, 如果不夠隱藏
-                if (cellsWidth < textWidth.value) {
+                if (cellsWidth < eTimeWidth.value + eTitleWidth.value) {
                     eventDateRef.value.classList.add('visible-hidden');
                 } else {
                     eventDateRef.value.classList.remove('visible-hidden');
                 }
                 const title = titleRef?.value as HTMLElement;
-
                 if (titleRef?.value.offsetWidth > cellsWidth - 20) {
-                    title.style.maxWidth = `${Math.min(cellsWidth - 20, title.offsetWidth)}px`;
+                    // title.style.maxWidth = `${Math.min(cellsWidth - 20, title.offsetWidth)}px`;
+
                 } else {
-                    title.style.maxWidth = '100%';
+                    // title.style.maxWidth = '100%';
                 }
             }
         });
@@ -633,6 +757,9 @@ export default defineComponent({
         .event-icon {
             padding-right: 20px;
         }
+        .event-title-tag {
+            margin-left: 15px;
+        }
     }
 
     &.continuing {
@@ -726,7 +853,8 @@ export default defineComponent({
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: right;
+    justify-content: center;
+    margin-right: -5px;
 }
 .event-icon {
     width: 100%; // 16 24 11
@@ -805,6 +933,7 @@ export default defineComponent({
     position: relative;
     display: flex;
     flex-shrink: 0;
+    visibility: hidden;
 }
 .point-left {
     left: 0;
@@ -847,6 +976,9 @@ export default defineComponent({
                 margin-top: 0;
             }
         }
+        .event-title-tag {
+            margin-left: 0;
+        }
         &.small {
             .event-title {
                 h1 {
@@ -855,6 +987,7 @@ export default defineComponent({
             }
         }
         &.hover {
+            padding-left: 0;
             .event-title {
                 h1 {
                     padding-left: 0;
@@ -862,11 +995,25 @@ export default defineComponent({
             }
             .event-content {
                 .event-date {
-                    margin-bottom: -6px;
+
+                    white-space: wrap;
+                    line-height: 16px;
                 }
                 .event-desc {
-                    margin-top: -6px;
+
+                    white-space: wrap;
+                    line-height: 16px;
                 }
+            }
+            .detail-btn {
+                visibility: visible;
+                animation: opacity 0.4s ease;
+            }
+        }
+        &.continued {
+            .event-title-tag {
+                margin-left: -5px;
+
             }
         }
     }
@@ -877,5 +1024,14 @@ export default defineComponent({
         }
     }
 
+
+}
+@keyframes opacity {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 100;
+    }
 }
 </style>
