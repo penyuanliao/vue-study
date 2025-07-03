@@ -318,7 +318,7 @@ export default defineComponent({
     grid-template-columns: auto 1fr;
     grid-column-gap: 0;
     align-items: start;
-    border-radius: 30px;
+    //border-radius: 30px;
     border: rgba(255, 255, 255, 0.3) 1px solid;
     padding: 30px 20px;
     z-index: 0;
@@ -418,8 +418,8 @@ export default defineComponent({
                 height: calc(100% + 4px);
                 top: -2px;
                 left: -2px;
-                background: rgba(255, 255, 255, 0.3);
-                backdrop-filter: blur(20px);
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(5px);
                 transition: all 0.1s;
                 pointer-events: auto;
             }

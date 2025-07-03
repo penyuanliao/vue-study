@@ -20,6 +20,7 @@ const createManager = () => {
     const maxPage = ref<number>(0);
     // 最大寬度
     const maxWidth = ref<number>(0);
+    const columns = ref<number>(0);
 
     const info = ref<ITouchMoveInfo>({
         width: 0,
@@ -66,7 +67,6 @@ const createManager = () => {
             el.scrollTo({ left: el.clientWidth * page.value, behavior: 'smooth' });
             info.value.x = el.scrollLeft - el.clientWidth;
         }
-
     };
 
     const resize = () => {
@@ -77,6 +77,11 @@ const createManager = () => {
         maxPage.value = Math.ceil(maxWidth.value / el.clientWidth) -1;
         page.value = 0;
         el.scrollTo(0, 0);
+        console.log(`maxWidth.value : ${(info.value.cell - (32 % info.value.cell)) * 46}
+            x: ${ info.value.x } max: ${maxPage.value} cell: ${info.value.cell}
+            ${el.clientWidth % info.value.cell} + ${info.value.cell - (32 % info.value.cell)} * 46
+            backWidth: ${info.value.backWidth} ${info.value.width * (maxPage.value + 1)} ${maxWidth.value}
+        `);
     }
 
     const add = (el: HTMLElement) => {
@@ -103,6 +108,11 @@ const createManager = () => {
         resize();
         add(el);
     };
+
+    const getPositionX = () => {
+        return el?.scrollLeft || 0;
+    }
+
     const clear = () => {
         page.value = 0;
         el.scrollTo(0, 0);
@@ -124,7 +134,8 @@ const createManager = () => {
         maxWidth,
         page,
         maxPage,
-        info
+        info,
+        getPositionX
     }
 }
 

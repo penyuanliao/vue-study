@@ -3,6 +3,7 @@ import { defineComponent, computed, ref, onMounted, watch, nextTick, onUnmounted
 import NSymbols from "@/components/EventCalendar/Button/NSymbols.vue";
 import useNTouchMove from "@/components/EventCalendar/NTouchMove/useNTouchMove";
 import NDetailButton from "@/components/EventCalendar/Button/NDetailButton.vue";
+import * as os from "node:os";
 export interface IEventTitleVars {
     sizeWidth?: number;
     // 開始位置
@@ -188,23 +189,33 @@ export default defineComponent({
         // 初始化參數
         const setupRange = () => {
             const cell: number = touchManager.info.value.cell;
+            const backCell: number = touchManager.info.value.backCell;
             const page: number = touchManager.page.value;
             const offsetStart: number = cell * page;
             const offsetEnded: number = cell * (page + 1);
             const start = (props.columnStart - 1);
             const totalLength: number = start + props.span;
             const startPage: number = Math.floor(start / cell);
-            const startSpan: number = cell - (start % cell);
-            const endedPage: number = Math.ceil(totalLength / cell) - 1;
-            const endedBack: number = cell - 32 % cell;
-            let endedSpan: number = (start + props.span) % cell;
-            if (endedSpan === 0) endedSpan = cell;
+            const endedBack: number = touchManager.info.value.backWidth;
+            const endedBackCell: number = page !== maxPage ? 0 : backCell;
+            const offsetStart: number = Math.max(cell * page - (page === maxPage ? endedBackCell : 0), start);
+            const offsetEnded: number = Math.min(totalLength, cell * (page + 1));
+            const offset: number = offsetStart % cell - (page === maxPage ? backCell : 0);
+            const startSpan: number = (offset === 0 ? Math.min(cell, props.span) : cell - (start % cell));
+            const endedPage: number = Math.ceil((totalLength + endedBackCell) / cell) - 1;
+            let endedSpan: number = page === maxPage ? (offsetEnded - offsetStart) : (start + props.span) % cell;
+            if (endedSpan === 0) endedSpan = cell - offset;
             let currSpan: number = 0;
             if (startPage === page) {
                 // 開始位置寬度
                 currSpan = startSpan;
             } else if (touchManager.page.value === endedPage) {
                 currSpan = endedSpan == 0 ? cell : endedSpan; // 結束位置寬度
+            } else if (totalLength <= offsetEnded || props.columnStart >= offsetStart && props.columnStart <= offsetEnded) {
+                currSpan = offsetEnded - offsetStart;
+            } else if (props.columnStart > offsetStart) {
+                // 超過cell大小
+                currSpan = props.columnStart - offsetStart;
             } else {
                 currSpan = cell; // 中間位置寬度
             }
@@ -225,7 +236,7 @@ export default defineComponent({
         }
         // 展開
         const onMouseEnterHandle = (event: MouseEvent) => {
-            const target = container.value;//event.target as HTMLElement;
+            const target = container.value;
             const defSize:number = layouts.marginLeft
                 + layouts.marginRight
                 + layouts.gap
@@ -266,59 +277,93 @@ export default defineComponent({
                         `);
                     // 該頁物件是否在範圍內
                     if (currSpan != 0) {
-                        let offset: number = start - offsetStart;
-                        const pageLimitWidth: boolean = cell - offset;
-
-                        if (offset >= 0 && pageLimitWidth > 1 && (start + pageLimitWidth) > totalLength ) {
-
-                            if (props.continuing && page === startPage) {
-                                padding += 10;
-                            } else {
-                                padding = 10;
-                            }
-                            // 這邊檢查中間
-                            target.style.marginLeft = `-${ offset * 46 }px`;
-                            target.style.minWidth = `${touchManager.info.value.width - padding}px`; // padding-right 8px
-                        } else {
-                            if (!props.continued && page === startPage) {
-                                padding = 0;
-                            } else if (!props.continuing && page === endedPage) {
-                                console.log(`target.offsetWidth: ${target.offsetWidth} (${target.offsetWidth + full - padding})`);
-
-                                if (page === startPage) {
-                                    padding = 10;
-                                } else {
-                                    padding = 5;
-                                }
-                            }
-                            // 右至左開
-                            // 原本大小增加
-                            target.style.minWidth = `${ target.offsetWidth + full - padding}px`;
-                            target.style.maxWidth = `${ target.offsetWidth + full - padding}px`;
+                        const isEnd: boolean = touchManager.maxPage.value === page;
+                        const isStart: boolean = page === 0;
+                        const endLeftStart: number = 32 - cell;
+                        const backCell: number = isEnd ? touchManager.info.value.backCell : 0;
+                        const backWidth: number = touchManager.info.value.backWidth % 46;
+                        let offset: number = offsetStart % cell - backCell;
+                        if (!(page * cell >= offsetStart) && offset === 0) {
+                            offset = cell;
                         }
+                        setupRange();
+                        console.log(`onMouseEnterHandle ${props.title} x: ${touchManager.info.value.x} ${touchManager.info.value.added}
+                        start: ${start} columnStart: ${props.columnStart} totalLength: ${totalLength} endLeftStart: ${endLeftStart}
+                        startPage: ${startPage} startSpan: ${startSpan}
+                        endedPage: ${endedPage} endedSpan: ${endedSpan} maxPage: ${touchManager.maxPage.value}
+                        offsetStart: ${offsetStart} offsetEnded: ${offsetEnded}
+                        currSpan: ${currSpan} full:${full}
+                        span: ${ props.span } backCell: ${backCell}
+                        cell: ${cell} next: ${ cell * (page + 1) } page: ${page} (${(offsetEnded - offsetStart)})
+                        offset: ${offset}
+                        `);
+
+                        const viewWidth: number = touchManager.info.value.width;
+                        if (currSpan === cell && endedPage !== page) {
+                            // 一整條的不動作
+                            console.log("一整條的不動作");
+                        } else if (offset === 0 && (!isEnd || props.columnStart <= (32 - cell))) {
+                            //左邊物件 1. 不是最後一頁 2. 最後一頁檢查左邊有span
+                            console.log("左邊物件");
+                            const added: number = (isEnd === false) ? touchManager.info.value.added - backWidth - 8 : 0; // 最後一頁是靠右
+                            // 原本寬度 + 螢幕寬度 - currSpan寬度
+                            target.style.minWidth = `${ target.offsetWidth + viewWidth + added - (currSpan * 46) }px`;
+                            target.style.maxWidth = `${ target.offsetWidth + viewWidth + added - (currSpan * 46) }px`;
+                        } else if (!isEnd && offsetEnded % cell === 0 && startPage !== endedPage || offsetEnded == 32 || offsetEnded % cell == 0) {
+                            console.log("右邊物件");
+                            const added: number = (isEnd) ? touchManager.info.value.added : 0; // 最後一頁是靠右
+                            target.style.minWidth = `${ target.offsetWidth + viewWidth + added - (currSpan * 46) }px`;
+                            target.style.maxWidth = `${ target.offsetWidth + viewWidth + added - (currSpan * 46) }px`;
+                        } else if (isEnd) {
+                            const added: number = touchManager.info.value.added; // 最後一頁是靠右
+                            if (endLeftStart === offsetStart) {
+                                target.style.marginLeft = `-${ added }px`;
+                                target.style.minWidth = `${ target.offsetWidth + viewWidth + added - (currSpan * 46) }px`;
+                                target.style.maxWidth = `${ target.offsetWidth + viewWidth + added - (currSpan * 46) }px`;
+                            } else {
+                                const extra: number = offsetStart - endLeftStart;
+                                target.style.marginLeft = `-${ extra * 46 + added }px`;
+                                target.style.minWidth = `${ viewWidth + added }px`;
+                                target.style.maxWidth = `${ viewWidth + added }px`;
+                                console.log("最後中間位置", added);
+                            }
+                        } else {
+                            // 中間位置
+                            const added: number = touchManager.info.value.added; // 最後一頁是靠右
+                            console.log("中間位置", backWidth, added);
+                            target.style.marginLeft = `-${ offset * 46 + (page === 0 ? 0 : 8) }px`;
+                            target.style.minWidth = `${ viewWidth + added - (page === 0 ? 8 : 0) }px`
+                            target.style.maxWidth = `${ viewWidth + added - (page === 0 ? 8 : 0) }px`
+                        }
+
+
                     } else if (totalLength <= offsetEnded) {
                         // 左至右開
-                        console.log("左至右開");
-                        extra = cell - totalLength % cell;
-                        target.style.minWidth = `${target.offsetWidth + extra * 46 - 8}px`;
+                        console.log("#3 onMouseEnterHandle 左至右開");
+                        // const extra: number = cell - totalLength % cell;
+                        // target.style.minWidth = `${target.offsetWidth + extra * 46 - 8}px`;
+                        target.style.minWidth = `${ target.offsetWidth + touchManager.info.value.width }px`;
+                        target.style.maxWidth = `${ target.offsetWidth + touchManager.info.value.width }px`;
                     }
                 } else {
                     // PC版本
                     target.style.minWidth = `${defSize + textWidth.value + titleWidth - 8}px`;
                 }
-                target.style.zIndex = 25;
+                target.parentElement.style.zIndex = 30;
                 isHover.value = true;
+                setTimeout(() => container.value.focus(), 0)
             }
         };
         // 收起來
         const onMouseLeaveHandle = (event: MouseEvent) => {
-            const target = container.value;//event.target as HTMLElement;
+            const target = container.value;
             if (target && isHover.value) {
                 target.style.minWidth = '100%';
                 target.style.maxWidth = null;
                 target.style.marginLeft = null;
                 target.style.zIndex = null;
                 target.classList.remove('hover');
+                target.parentElement.style.zIndex = 10;
                 // 等動畫完成再打開避免連鎖反應
                 // eslint-disable-next-line no-return-assign
                 setTimeout(() => isHover.value = false, 100);
@@ -382,8 +427,6 @@ export default defineComponent({
                 start,
                 page,
                 totalLength,
-                startPage,
-                startSpan,
                 endedPage,
                 endedSpan,
                 endedBack,
@@ -432,14 +475,21 @@ export default defineComponent({
                 indentWidth = 0;
             }
             // 移動頁面到最後只剩下1格
-            if (totalLength - offsetStart === 1 ) {
+            if (totalLength - offsetStart <= 1) {
                 // 隱藏內文
                 visibility = isHover.value ? 'visible' : 'hidden';
             }
-
+            // console.log(`sectionStyle ${props.title} left: ${left} indentWidth: ${indentWidth}
+            //     columnStart: ${props.columnStart} x: ${touchManager.info.value.x} getPositionX: ${touchManager.getPositionX()}
+            //     start: ${start} totalLength: ${totalLength} cell: ${touchManager.info.value.cell}
+            //     startPage: ${startPage} startSpan: ${startSpan}
+            //     endedPage: ${endedPage} endedSpan: ${endedSpan} endedBack: ${endedBack}
+            //     backWidth: ${touchManager.info.value.cell - Math.floor(endedBack / 46)} ${endedBack % 46}
+            //     offsetStart: ${offsetStart} offsetEnded: ${offsetEnded} between:${between}
+            //     `);
             return {
                 visibility,
-                maxWidth: `${touchManager.info.value.width - 10}px`,
+                maxWidth: `${touchManager.info.value.width + touchManager.info.value.added - 25}px`,
                 left: `${left + indentWidth }px`
             }
         }
@@ -463,7 +513,6 @@ export default defineComponent({
             let maxWidth: number = touchManager.info.value.width
             - layouts.btn - titleWidth - (layouts.gap * 2);
             const smWidth: number = (cellsNum * 46) - titleWidth - layouts.gap * 2;
-
             if (props.tag) {
                 maxWidth -= (layouts.tag + 20);
             }
@@ -473,7 +522,7 @@ export default defineComponent({
             console.log(`  - eventContentStyle:
             titleWidth: ${titleWidth}
             maxWidth: ${maxWidth}
-            smWidth: ${smWidth}
+            width: ${touchManager.info.value.width + touchManager.info.value.added}
                         `);
             if (isHover.value) {
 
@@ -565,10 +614,19 @@ export default defineComponent({
                 if (isTouchDevice) {
                     // container.value.addEventListener('pointerup', onClick);
                     container.value.addEventListener('pointerup', onMouseEnterHandle);
-                    container.value.addEventListener('mouseleave', onMouseLeaveHandle);
+                    // container.value.addEventListener('mouseleave', onMouseLeaveHandle);
+                    container.value.addEventListener('focusout', (event) => {
+                        onMouseLeaveHandle(event);
+                    })
                 } else {
                     container.value.addEventListener('mouseenter', onMouseEnterHandle);
                     container.value.addEventListener('mouseleave', onMouseLeaveHandle);
+                    container.value.addEventListener('focusout', (event) => {
+                        onMouseLeaveHandle(event);
+                    })
+                    container.value.addEventListener('focusin', (event) => {
+                        onMouseEnterHandle(event);
+                    })
                 }
             }
             measureWordWidth(eventDate.value);
@@ -603,6 +661,7 @@ export default defineComponent({
 <template>
     <div
         ref="container"
+        tabindex="0"
         :class="containerClass()"
         @click="openLinkHandle"
     >
@@ -658,7 +717,6 @@ export default defineComponent({
                     :class="{
                     hidden: hasCramped
                 }"
-                :style="eventContentStyle()"
             >
                 <div
                     class="event-date font-style"
@@ -696,6 +754,9 @@ export default defineComponent({
     transition: min-width 0.3s ease, height 0.3s ease;
     cursor: pointer;
     pointer-events: visible;
+    &:focus {
+        outline: none;
+    }
 
     .event-title-section {
         width: 100%;
@@ -967,6 +1028,7 @@ export default defineComponent({
             pointer-events: none;
         }
         .event-content {
+            min-width: calc(46px * 2);
             .event-date {
                 font-size: 12px;
                 margin-bottom: 0;
@@ -990,6 +1052,8 @@ export default defineComponent({
             padding-left: 0;
             .event-title {
                 h1 {
+                    max-width: calc(46px * 2);
+                    white-space: wrap;
                     padding-left: 0;
                 }
             }

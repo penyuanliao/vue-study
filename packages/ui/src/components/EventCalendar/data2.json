@@ -649,7 +649,7 @@
         "company": 94,
         "title": "天天送 第七季-第4级",
         "start_at": "2024-06-24 00:00:00",
-        "end_at": "2024-07-29 00:00:00",
+        "end_at": "2024-06-30 00:00:00",
         "link": "https://pp88.asia/zh/promotion/%E5%A4%A9%E5%A4%A9%E9%80%81/",
         "created_by": 397,
         "updated_by": 397,
@@ -877,6 +877,24 @@
           "is_new": false,
           "active": true
         }
+      },
+      {
+        "id": 895,
+        "event_group_id": 207,
+        "company": 99,
+        "title": "欢钓锦标赛 (第一阶段锦标赛)",
+        "start_at": "2024-06-26 00:00:00",
+        "end_at": "2024-06-26 00:00:00",
+        "link": "https://spade-event.com/enews/event/2024_Fishing_Frenzy_Tournament_BBIN/",
+        "created_by": 397,
+        "updated_by": 397,
+        "created_at": "2024-05-10 14:13:43",
+        "updated_at": "2024-05-24 11:45:04",
+        "period": false,
+        "sort": 80,
+        "link_text": "点击观看",
+        "tooltip_title": "欢钓锦标赛 (第一阶段锦标赛)",
+        "company_name": "CS电子"
       }
     ]
   }

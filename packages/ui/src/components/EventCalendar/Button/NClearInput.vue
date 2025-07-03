@@ -88,6 +88,7 @@ export default defineComponent({
             v-model="searchValue"
             @focusout="onInputFocusoutHandle"
             ref="searchInput"
+            tabindex="1"
         />
     </div>
 </template>
