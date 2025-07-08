@@ -48,7 +48,7 @@ export default defineComponent({
                     :data="item"
                     class="switch-btn"
                     border="2"
-                    @change="(value) => handle(value, i)"
+                    @change="(value: any) => handle(value, i)"
                 />
             </div>
         </div>

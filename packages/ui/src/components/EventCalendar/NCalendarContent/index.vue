@@ -1,7 +1,7 @@
 <script lang="ts">
-import { computed, defineComponent, onMounted, PropType, ref, watch } from "vue";
+import { computed, defineComponent, onMounted, PropType, ref, watch } from 'vue';
 import EventTitle from './EventTitle.vue';
-import { IEvents } from "@/components/EventCalendar/useEventCalendar";
+import { IEvents } from '../useEventCalendar';
 
 export default defineComponent({
     name: 'NCalendarContent',

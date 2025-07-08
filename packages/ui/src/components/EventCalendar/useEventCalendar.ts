@@ -87,11 +87,6 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
                 // console.log(`rows`, key, eventColumnStart, span);
                 fragments = rows.get(key)?.fragments || [];
                 fragment = eventColumnStart - (columnStart + span);
-                // if (key === 8) {
-                //     console.log(`current columnStart: ${columnStart} span: ${span} key: ${key}
-                //     fragment: ${fragment} ?: ${(columnStart - 1) + span}
-                //     columnStart: ${eventColumnStart} span: ${eventSpan}`);
-                // }
                 if (fragment > 1) {
                     fragments = setFragment(rows, key, columnStart + span, eventColumnStart - (columnStart + span));
                 }
@@ -105,7 +100,6 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
                 return;
             }
             if (rows?.get(key)?.fragments && (rows?.get(key)?.fragments || []).length > 0) {
-                // console.log('fragments', event.title, `key:${key}`, rows?.get(key)?.fragments);
                 // 13, 13
                 // 19, 5
                 const seeds = rows.get(key)?.fragments || [];
@@ -122,7 +116,6 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
                     //     columnStart: eventColumnStart + eventSpan,
                     //     span: seed.span - space
                     // };
-                    // console.log(event.title, eventColumnStart, '>', seed.columnStart, space, '<', seed.span);
 
                     if (eventColumnStart >= seed.columnStart
                         && space <= seed.span) {

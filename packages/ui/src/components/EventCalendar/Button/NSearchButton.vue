@@ -2,7 +2,7 @@
 import { defineComponent, onMounted, ref } from 'vue';
 import NClearInput from './NClearInput.vue';
 import NSymbols from './NSymbols.vue';
-import NSearchFilterTags from "@/components/EventCalendar/Button/NSearchFilterTags.vue";
+import NSearchFilterTags from './NSearchFilterTags.vue';
 
 export default defineComponent({
     name: 'NSearchButton',

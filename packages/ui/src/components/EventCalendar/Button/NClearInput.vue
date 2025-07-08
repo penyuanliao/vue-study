@@ -20,7 +20,7 @@ export default defineComponent({
         const onClearClickHandle = () => {
             console.log('onClearClickHandle');
             searchValue.value = '';
-            searchInput.value.focus();
+            searchInput.value?.focus();
         };
         const onKeyupHandle = (e: KeyboardEvent) => {
             if (e.key === 'Enter') {

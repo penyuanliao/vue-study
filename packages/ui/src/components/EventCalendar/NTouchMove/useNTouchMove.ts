@@ -1,4 +1,4 @@
-import { onBeforeUnmount, ref } from "vue";
+import { onBeforeUnmount, ref } from 'vue';
 
 let instance: ReturnType<typeof createManager> | null = null;
 
@@ -8,12 +8,16 @@ export interface ITouchMoveInfo {
     width: number;
     cell: number;
     scrollWidth: number;
-    x: 0
+    x: number;
+    backWidth: number;
+    backCell: number;
+    clientWidth: number;
+    added: number;
 }
 
 const createManager = () => {
-    let el: HTMLElement = null;
-    let moveStartX: Number = 0;
+    let el: HTMLElement | null = null;
+    let moveStartX: number = 0;
     // 目前第幾頁
     const page = ref<number>(0);
     // 最大頁數
@@ -26,11 +30,12 @@ const createManager = () => {
         width: 0,
         cell: 0,
         scrollWidth: 0,
-        x: 0
+        x: 0,
+        backWidth: 0,
+        backCell: 0,
+        clientWidth: 0,
+        added: 0
     });
-
-    let listeners: Partial<Record<SwipeDirection, () => void>> = {};
-
     const onMouseStart = (e: TouchEvent | MouseEvent) => {
         if (e instanceof TouchEvent) {
             const touch = e.changedTouches[0];
@@ -45,6 +50,7 @@ const createManager = () => {
     };
 
     const onMouseEnd = (e: TouchEvent | MouseEvent) => {
+        const inset: number = 0;
         let clientX: number;
         if (e instanceof TouchEvent) {
             const touch = e.changedTouches[0];
@@ -53,52 +59,61 @@ const createManager = () => {
             clientX = e.clientX;
         }
         const deltaX = clientX - moveStartX;
-        // console.log(`deltaX: ${deltaX}, screenX: ${e.changedTouches[0].screenX}`);
+        let left: number = 0;
         if (deltaX < -100) {
-            console.log(`onMouseEnd maxPage ${page.value + 1} ${maxPage.value}`);
             if (page.value + 1 > maxPage.value) return;
             page.value += 1;
-            el.scrollTo({ left: el.clientWidth * page.value, behavior: 'smooth' });
-            info.value.x = el.scrollLeft + el.clientWidth;
+            left = info.value.width * page.value - inset;
+            if (el) el.scrollTo({ left, behavior: 'smooth' });
+            info.value.x = left;
         } else if (deltaX > 100) {
-            console.log(`2onMouseEnd maxPage ${page.value + 1} ${maxPage.value}`);
             if (page.value - 1 < 0) return;
             page.value -= 1;
-            el.scrollTo({ left: el.clientWidth * page.value, behavior: 'smooth' });
-            info.value.x = el.scrollLeft - el.clientWidth;
+            left = info.value.width * page.value - inset;
+            if (el) el.scrollTo({ left, behavior: 'smooth' });
+            info.value.x = left;
         }
     };
 
     const resize = () => {
-        info.value.width = el.clientWidth;
-        info.value.scrollWidth = el.scrollWidth;
+        if (!el) return;
+        info.value.clientWidth = el.clientWidth;
+        info.value.added = el.clientWidth % 46; // ㄧ頁多餘寬度
+        info.value.scrollWidth = el.scrollWidth - 8;
         info.value.cell = Math.floor(el.clientWidth / 46);
-        maxWidth.value = el.scrollWidth;
-        maxPage.value = Math.ceil(maxWidth.value / el.clientWidth) -1;
+        info.value.width = info.value.cell * 46;
+        maxPage.value = Math.ceil(32 / info.value.cell) - 1;
+        info.value.backCell = (info.value.cell - (32 % info.value.cell)) % info.value.cell; // 最後一頁多幾個cell
+        info.value.backWidth = (el.clientWidth % info.value.cell) + info.value.backCell * 46;// (info.value.width * (maxPage.value + 1)) - info.value.scrollWidth;
+        maxWidth.value = info.value.scrollWidth;
         page.value = 0;
         el.scrollTo(0, 0);
         console.log(`maxWidth.value : ${(info.value.cell - (32 % info.value.cell)) * 46}
-            x: ${ info.value.x } max: ${maxPage.value} cell: ${info.value.cell}
+            x: ${info.value.x} max: ${maxPage.value} cell: ${info.value.cell}
             ${el.clientWidth % info.value.cell} + ${info.value.cell - (32 % info.value.cell)} * 46
             backWidth: ${info.value.backWidth} ${info.value.width * (maxPage.value + 1)} ${maxWidth.value}
         `);
-    }
+    };
 
-    const add = (el: HTMLElement) => {
-        el.addEventListener('touchstart', onMouseStart);
-        el.addEventListener('touchmove', onMouseMove);
-        el.addEventListener('touchend', onMouseEnd);
-        el.addEventListener('mousedown', onMouseStart);
-        el.addEventListener('mouseup', onMouseEnd);
+    const add = (element: HTMLElement | null = el) => {
+        if (element) {
+            element.addEventListener('touchstart', onMouseStart);
+            element.addEventListener('touchmove', onMouseMove);
+            element.addEventListener('touchend', onMouseEnd);
+            element.addEventListener('mousedown', onMouseStart);
+            element.addEventListener('mouseup', onMouseEnd);
+        }
         window.addEventListener('resize', resize);
     };
 
-    const remove = (el: HTMLElement) => {
-        el.removeEventListener('touchstart', onMouseStart);
-        el.removeEventListener('touchmove', onMouseMove);
-        el.removeEventListener('touchend', onMouseEnd);
-        el.removeEventListener('mousedown', onMouseStart);
-        el.removeEventListener('mouseup', onMouseEnd);
+    const remove = (element: HTMLElement | null = el) => {
+        if (element) {
+            element.removeEventListener('touchstart', onMouseStart);
+            element.removeEventListener('touchmove', onMouseMove);
+            element.removeEventListener('touchend', onMouseEnd);
+            element.removeEventListener('mousedown', onMouseStart);
+            element.removeEventListener('mouseup', onMouseEnd);
+        }
         window.removeEventListener('resize', resize);
     };
 
@@ -106,17 +121,16 @@ const createManager = () => {
         el = current;
         // el.style.overflow = 'hidden';
         resize();
-        add(el);
+        if (window.innerWidth < 960) add(el);
     };
 
-    const getPositionX = () => {
-        return el?.scrollLeft || 0;
-    }
+    const getPositionX = () => el?.scrollLeft || 0;
 
     const clear = () => {
         page.value = 0;
-        el.scrollTo(0, 0);
-    }
+        info.value.x = 0;
+        if (el) el.scrollTo(0, 0);
+    };
 
     const destroy = () => {
         if (el) {
@@ -136,11 +150,10 @@ const createManager = () => {
         maxPage,
         info,
         getPositionX
-    }
-}
+    };
+};
 
 const useNTouchMove = () => {
-
     if (!instance) {
         instance = createManager();
     }
@@ -150,7 +163,6 @@ const useNTouchMove = () => {
     // });
 
     return instance;
-}
-
+};
 
 export default useNTouchMove;

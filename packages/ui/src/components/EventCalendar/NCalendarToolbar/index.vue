@@ -65,7 +65,10 @@ export default defineComponent({
                     <div class="updated" />
                 </NTooltip>
             </div>
-            <div v-if="index !== fourMonthly.length - 1" class="divider"/>
+            <div
+                v-if="index !== fourMonthly.length - 1"
+                class="divider"
+            />
         </template>
     </div>
 </template>
@@ -78,7 +81,6 @@ export default defineComponent({
     width: 100%;
     max-width: 770px;
     min-width: 390px;
-    //margin: 0 auto;
     position: relative;
     display: flex;
     flex-direction: row;

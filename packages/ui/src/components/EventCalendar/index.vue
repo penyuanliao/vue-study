@@ -318,7 +318,7 @@ export default defineComponent({
     grid-template-columns: auto 1fr;
     grid-column-gap: 0;
     align-items: start;
-    //border-radius: 30px;
+    border-radius: 30px;
     border: rgba(255, 255, 255, 0.3) 1px solid;
     padding: 30px 20px;
     z-index: 0;
