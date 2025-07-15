@@ -57,13 +57,17 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .sidebar {
-    width: auto;
+    width: 100%;
     height: 100%;
     padding-top: 60px;
     padding-bottom: 60px;
     user-select: none;
     padding-right: 2px;
     transition: all 0.3s;
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     &.side-collapse {
         position: absolute;
         top: 176px;
@@ -95,18 +99,20 @@ export default defineComponent({
         width: 100%;// 176px;
         height: 100%;// 29px;
         min-height: 54px;
+        min-width: 100px;
         position: relative;
         vertical-align: top;
         display: inline-block;
         justify-content: left;
         color: #606060;
-        flex-shrink: 1;
+        flex-shrink: 2;
         transition: width 0s;
         span {
             font-family: 'Montserrat', sans-serif;
             font-size: 1.28rem;
             font-style: normal;
             font-weight: 700;
+            white-space: wrap;
         }
 
     }
@@ -124,9 +130,10 @@ export default defineComponent({
         border: 2px transparent solid;
     }
 }
-@media (max-width: 1023px) {
+@media (max-width: 959px) {
     .scheduled {
-        min-width: 203px;
+        min-width: 180px;
+        max-width: 180px;
 
         .calendars {
             align-items: center;
@@ -135,11 +142,11 @@ export default defineComponent({
             padding: 0 0;
         }
         .text {
-            width: 70px;
+            width: 100%;
             flex-shrink: 1;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            //align-items: center;
             justify-content: center;
             span {
                 font-size: 14px;

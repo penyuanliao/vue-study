@@ -4,6 +4,12 @@ import NSymbols from '../Button/NSymbols.vue';
 import useNTouchMove from '../NTouchMove/useNTouchMove';
 import NDetailButton from '../Button/NDetailButton.vue';
 
+interface FontStyleOptions {
+    fontSize: string;
+    fontWeight: string;
+    fontFamily?: string;
+}
+
 export interface IEventTitleVars {
     sizeWidth: number;
     // 開始位置
@@ -27,6 +33,7 @@ export interface IEventTitleVars {
     currSpan: number;
     page: number;
 }
+
 export default defineComponent({
     name: 'EventTitle',
     components: { NDetailButton, NSymbols },
@@ -112,6 +119,7 @@ export default defineComponent({
         // 滑動事件singleton
         const touchManager = useNTouchMove();
         const touchPage = computed(() => touchManager.page.value);
+        const isFocus = ref<boolean>(false);
         // 參數
         const range: IEventTitleVars = {
             sizeWidth: 0,
@@ -137,21 +145,36 @@ export default defineComponent({
             tag: 30,
             btn: 80
         };
-        const fontPC: string = '500 19px "Montserrat"';
-        const fontMobile: string = '500 12px "Montserrat"';
-        const titleFontPC: string = '700 23px "Montserrat"';
-        const titleFontMobile: string = '700 16px "Montserrat"';
-        const createElement = (tagName: string, font: string):HTMLElement => {
+        const fontFamily: string = '"Montserrat", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif';
+        const fontPC: FontStyleOptions = {
+            fontSize: '19px',
+            fontWeight: '500'
+        }
+        const fontMobile: FontStyleOptions = {
+            fontSize: '12px',
+            fontWeight: '500'
+        };
+        const titleFontPC: FontStyleOptions = {
+            fontSize: '23px',
+            fontWeight: '700'
+        };
+        const titleFontMobile: FontStyleOptions = {
+            fontSize: '16px',
+            fontWeight: '700'
+        }
+        const createElement = (tagName: string, options: FontStyleOptions):HTMLElement => {
             const el = document.createElement(tagName);
             el.style.position = 'absolute';
             el.style.visibility = 'hidden';
             el.style.whiteSpace = 'nowrap';
-            el.style.font = font;
+            el.style.fontSize = options.fontSize;
+            el.style.fontWeight = options.fontWeight;
+            el.style.fontFamily = options.fontFamily || fontFamily;
             el.style.top = '-9999px';
             el.style.left = '-9999px';
             return el;
         };
-        const measureTitleWidth = (text: string, font: string = titleFontPC) => {
+        const measureTitleWidth = (text: string, font: FontStyleOptions = titleFontPC) => {
             const el:HTMLElement = createElement('h1', font);
 
             if (!container.value) return 0;
@@ -165,7 +188,7 @@ export default defineComponent({
             }
             return tWidth;
         };
-        const measureTextWidth = (timeText: string, descText: string, font: string = fontPC) => {
+        const measureTextWidth = (timeText: string, descText: string, font: FontStyleOptions = fontPC) => {
             const el:HTMLElement = createElement('div', font);
 
             if (!container.value) return 0;
@@ -276,6 +299,7 @@ export default defineComponent({
                         offsetEnded,
                         currSpan
                     } = range;
+                    touchManager.setFocusElement(target);
                     // 補足寬度
                     const { cell } = touchManager.info.value;
                     const full: number = sizeWidth * (cell - currSpan);
@@ -324,18 +348,18 @@ export default defineComponent({
                                 target.style.maxWidth = `${target.offsetWidth + viewWidth + added - ((currSpan - 1) * 46)}px`;
                             } else {
                                 console.log('右邊物件-2', added, (touchManager.info.value.clientWidth) % 46);
-                                target.style.minWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
-                                target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
+                                target.style.minWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46 + 17)}px`;
+                                target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46 + 17)}px`;
                             }
                         } else if (isEnd) {
                             const { added } = touchManager.info.value; // 最後一頁是靠右
                             if (endLeftStart === offsetStart) {
-                                target.style.marginLeft = `-${added}px`;
+                                target.style.transform = `translateX(-${added}px)`;
                                 target.style.minWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
                                 target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
                             } else {
                                 const extra: number = offsetStart - endLeftStart;
-                                target.style.marginLeft = `-${extra * 46 + added}px`;
+                                target.style.transform = `translateX(-${extra * 46 + added}px)`;
                                 target.style.minWidth = `${viewWidth + added}px`;
                                 target.style.maxWidth = `${viewWidth + added}px`;
                                 console.log('最後中間位置', added);
@@ -344,7 +368,7 @@ export default defineComponent({
                             // 中間位置
                             const { added } = touchManager.info.value; // 最後一頁是靠右
                             console.log('中間位置', backWidth, added);
-                            target.style.marginLeft = `-${offset * 46 + (isStart ? 0 : 8)}px`;
+                            target.style.transform = `translateX(-${offset * 46 + (isStart ? 0 : 8)}px)`;
                             target.style.minWidth = `${viewWidth + added - (isStart ? 8 : 0)}px`;
                             target.style.maxWidth = `${viewWidth + added - (isStart ? 8 : 0)}px`;
                         }
@@ -362,7 +386,9 @@ export default defineComponent({
                 }
                 if (target && target.parentElement) (target.parentElement as HTMLElement).style.zIndex = '30';
                 isHover.value = true;
-                setTimeout(() => container.value?.focus(), 0);
+                setTimeout(() => {
+                    if (isHover.value) container.value?.focus();
+                }, isMobile.value ? 150 : 0); // 手機版會失焦
             }
         };
         // 收起來
@@ -373,6 +399,7 @@ export default defineComponent({
                 target.style.maxWidth = '';
                 target.style.marginLeft = '';
                 target.style.zIndex = '';
+                target.style.transform = '';
                 target.classList.remove('hover');
                 if (target && target.parentElement) (target.parentElement as HTMLElement).style.zIndex = '10';
                 // 等動畫完成再打開避免連鎖反應
@@ -426,7 +453,10 @@ export default defineComponent({
         const openLinkHandle = () => {
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
             const selectedText = window.getSelection()?.toString();
-            if (selectedText && selectedText.length > 0) return;
+            if (selectedText && selectedText.length > 0) {
+                navigator.clipboard.writeText(selectedText);
+                return;
+            }
             if (window.innerWidth < 960 || isTouchDevice) return;
             window.open(props.link, '_blank');
         };
@@ -513,8 +543,8 @@ export default defineComponent({
         const measureWordWidth = async (value: string) => {
             if (!value || !container.value) return;
             sectionRef.value?.classList.remove('section-animate'); // 切換月份時不需要動畫
-            const font: string = (isMobile.value) ? fontMobile : fontPC;
-            const titleFont: string = (isMobile.value) ? titleFontMobile : titleFontPC;
+            const font: FontStyleOptions = (isMobile.value) ? fontMobile : fontPC;
+            const titleFont: FontStyleOptions = (isMobile.value) ? titleFontMobile : titleFontPC;
             textWidth.value = measureTextWidth(value, props.eventDesc, font);
             eTitleWidth.value = measureTitleWidth(props.title, titleFont);
             await nextTick();
@@ -578,21 +608,20 @@ export default defineComponent({
             window.addEventListener('resize', resize);
             resize();
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-            if (isMobile.value) {
-                document.body.style.overflow = 'hidden';
-            }
-
             if (container.value) {
-                if (isTouchDevice) {
+                if (isTouchDevice || isMobile.value) {
                     // container.value.addEventListener('pointerup', onClick);
                     container.value.addEventListener('pointerup', onMouseEnterHandle);
                     // container.value.addEventListener('mouseleave', onMouseLeaveHandle);
                     container.value.addEventListener('focusout', () => {
                         onMouseLeaveHandle();
+                        touchManager.setFocusElement(null);
                     });
                 } else {
                     container.value.addEventListener('mouseenter', onMouseEnterHandle);
-                    container.value.addEventListener('mouseleave', onMouseLeaveHandle);
+                    container.value.addEventListener('mouseleave', () => {
+                        if (document.activeElement === container.value) onMouseLeaveHandle();
+                    });
                     container.value.addEventListener('focusout', () => {
                         onMouseLeaveHandle();
                     });
@@ -716,8 +745,8 @@ export default defineComponent({
 .event-title-container {
     width: 100%;
     height: 100%;
-    min-width: 0;
-    min-height: 0;
+    min-width: 46px;
+    min-height: 30px;
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -726,7 +755,7 @@ export default defineComponent({
     left: calc(1 / 2 * 100%);
     transform: translateX(calc(calc(1 / 2 * 100%) * -1));
     transition: min-width 0.3s ease, height 0.3s ease;
-    cursor: pointer;
+    //cursor: pointer;
     pointer-events: visible;
     &:focus {
         outline: none;
@@ -836,6 +865,7 @@ export default defineComponent({
             visibility: visible;
             h1 {
                 padding-left: 10px;
+                max-width: none;
             }
             .tag {
                 padding-left: 0;
@@ -940,6 +970,7 @@ export default defineComponent({
     font-size: 19px;
     white-space: nowrap;
     pointer-events: none;
+    color: black;
 }
 .event-content {
     width: auto;
@@ -976,20 +1007,6 @@ export default defineComponent({
 .point-right {
     left: calc(100%);
     transform: translateX(calc(100% * -1));
-}
-.updated:after {
-    content: '';
-    width: 20px;
-    height: 20px;
-    position: absolute;
-    background: #FF0000;
-    border: white 2px solid;
-    border-radius: 50%;
-    box-shadow: 0 4px 4px 0 #00000040;
-    z-index: 30;
-    box-sizing: border-box;
-    top: -6px;
-    left: 0;
 }
 .visible-hidden {
     visibility: hidden;

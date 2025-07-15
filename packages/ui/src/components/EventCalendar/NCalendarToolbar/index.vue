@@ -1,6 +1,6 @@
 <script lang="ts">
 import { computed, defineComponent, PropType } from 'vue';
-import NTooltip from "@/components/EventCalendar/Tips/NTooltip.vue";
+import NTooltip from '../Tips/NTooltip.vue';
 
 export default defineComponent({
     name: 'NEventCalendarToolbar',
@@ -51,7 +51,7 @@ export default defineComponent({
                 :class="{
                     'calendar-th': true,
                     active: date.getMonth() === currentDate.getMonth(),
-                    current: new Date('2024/08/02').getMonth() === date.getMonth()
+                    current: new Date('2024/06/01').getMonth() === date.getMonth()
                 }"
                 @click="onClickHandle(`${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`)"
             >
@@ -109,6 +109,12 @@ export default defineComponent({
         text-align: center;
         color: #DFDFDF;
         cursor: pointer;
+        box-sizing: border-box;
+        border-top: 1px transparent solid;
+        &:hover {
+            //border-top: 1px solid #F15624;
+            color: #444746;
+        }
         &:active,
         &.active {
             color: #F15624;

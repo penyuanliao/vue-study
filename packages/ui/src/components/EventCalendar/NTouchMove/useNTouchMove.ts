@@ -24,7 +24,8 @@ const createManager = () => {
     const maxPage = ref<number>(0);
     // 最大寬度
     const maxWidth = ref<number>(0);
-    const columns = ref<number>(0);
+    // 處理物件開啟狀態
+    const focusElement = ref<HTMLElement | null>(null);
 
     const info = ref<ITouchMoveInfo>({
         width: 0,
@@ -60,14 +61,18 @@ const createManager = () => {
         }
         const deltaX = clientX - moveStartX;
         let left: number = 0;
+
+
         if (deltaX < -100) {
             if (page.value + 1 > maxPage.value) return;
+            if (focusElement.value) focusElement.value.blur();
             page.value += 1;
             left = info.value.width * page.value - inset;
             if (el) el.scrollTo({ left, behavior: 'smooth' });
             info.value.x = left;
         } else if (deltaX > 100) {
             if (page.value - 1 < 0) return;
+            if (focusElement.value) focusElement.value.blur();
             page.value -= 1;
             left = info.value.width * page.value - inset;
             if (el) el.scrollTo({ left, behavior: 'smooth' });
@@ -126,6 +131,8 @@ const createManager = () => {
 
     const getPositionX = () => el?.scrollLeft || 0;
 
+    const setFocusElement = (el: HTMLElement | null) => focusElement.value = el;
+
     const clear = () => {
         page.value = 0;
         info.value.x = 0;
@@ -149,7 +156,8 @@ const createManager = () => {
         page,
         maxPage,
         info,
-        getPositionX
+        getPositionX,
+        setFocusElement
     };
 };
 

@@ -143,7 +143,8 @@ export default defineComponent({
                     class="item"
                     :class="{
                         'item-small': hasSmall,
-                        'hidden': !event.calendar.checked
+                        'hidden': !event.calendar.checked,
+                        'updated': event.isUpdate && !isContinued(event.startTime),
                     }"
                     :style="{
                         'grid-area': `${event.area.rowStart} / ${event.area.columnStart} / auto / span ${event.area.span}`,
@@ -151,7 +152,6 @@ export default defineComponent({
                 >
                     <EventTitle
                         :class="{
-                            'updated': event.isUpdate,
                             'continued': isContinued(event.startTime),
                             'continuing': isContinuing(event.endedTime),
                         }"
@@ -324,10 +324,55 @@ export default defineComponent({
         left: calc(1 / 2 * 100%);
         transform: translateX(calc(calc(1 / 2 * 100%) * -1)) translateY(calc(calc(1 / 2 * 100%) * -1));
     }
+    .updated:after {
+        content: '';
+        width: 20px;
+        height: 20px;
+        position: absolute;
+        background: #FF0000;
+        border: white 2px solid;
+        border-radius: 50%;
+        z-index: 30;
+        box-sizing: border-box;
+        top: -6px;
+        left: 0;
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 1);
+        animation: pulse-white 2s infinite;
+    }
+    .updated:before {
+        content: '';
+        background: transparent;
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        transform: scale(1);
+        z-index: 30;
+        top: -6px;
+        left: 0;
+        box-shadow: 0 4px 4px 0 #00000040;
+    }
+
 }
 
 .hidden {
     display: none;
+}
+@keyframes pulse-white {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
 }
 @media (max-width: 959px) {
 

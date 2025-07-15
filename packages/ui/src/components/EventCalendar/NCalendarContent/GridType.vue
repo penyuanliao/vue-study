@@ -142,6 +142,9 @@ export default defineComponent({
         &:active {
             scale: .9;
         }
+        &:hover {
+            color: #444746;
+        }
     }
 }
 input {

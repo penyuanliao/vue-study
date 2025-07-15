@@ -208,10 +208,13 @@ export default defineComponent({
             height: 14px;
         }
         &.active:after {
-            width: calc(var(--search-button-height, 65px) - 8px);
-            height: calc(var(--search-button-height, 65px) - 8px);
+            width: calc(var(--search-button-height, 40px) - 8px);
+            height: calc(var(--search-button-height, 40px) - 8px);
 
         }
+    }
+    .search-input-box {
+        width: var(--search-button-height, 40px);
     }
 }
 

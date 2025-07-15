@@ -63,6 +63,7 @@ export default defineComponent({
         const isDeflate = ref<boolean>(true);
         const contentRef = ref<HTMLElement|null>(null);
         const touchManager = useNTouchMove();
+        const weeks: string[] = ['日', '一', '二', '三', '四', '五', '六'];
 
         const setData = (month: string) => {
             if (+month === 5) {
@@ -146,7 +147,6 @@ export default defineComponent({
             });
         };
 
-
         onMounted(() => {
 
             touchManager.setup(contentRef.value);
@@ -178,6 +178,8 @@ export default defineComponent({
             popupTips,
             events,
             calendars,
+            now,
+            weeks,
             isCurrentMonth,
             activeDate,
             fourMonthlyPeriod,
@@ -207,6 +209,7 @@ export default defineComponent({
                     :once="true"
                     v-model:selected="isCurrentMonth"
                     @selected="(value:boolean) => onClickThisMonthHandle(value)"
+                    :title="`${now.getMonth() + 1}月 ${now.getDate()}日 (星期${weeks[now.getDay()]})`"
                 >
                     {{ '今天' }}
                 </NToggleButton>
@@ -293,7 +296,7 @@ export default defineComponent({
 @use 'theme';
 
 .event-calendar-container {
-    min-height: 1080px;
+    min-height: 100vh;
     min-width: 0;
     max-width: 1920px;
     height: 100%;
@@ -334,7 +337,7 @@ export default defineComponent({
         width: 100%;
         height: 100%;
         min-height: 100px; // 146px
-        grid-column: 1 / span 4;
+        grid-column: 1 / span 5;
         grid-column-start: 2;
         position: relative;
         display: flex;
@@ -352,8 +355,9 @@ export default defineComponent({
         @media (max-width: 1772px) {
             padding-left: 10px;
         }
-        @media (max-width: 1161px) {
+        @media (max-width: 1260px) {
             grid-column-start: 1;
+            grid-column: 1 / span 6;
         }
 
     }
@@ -363,8 +367,12 @@ export default defineComponent({
     .sidebar-collapse {
         grid-column: 1 / span 1;
         margin-right: 4px;
-        max-width: 220px;
-
+        width: 100%;
+        min-width: 220px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         .sidebar-driver {
             display: none;
         }
@@ -429,7 +437,7 @@ export default defineComponent({
         width: 100%;
         padding: 8px 8px;
         overflow: hidden;
-
+        grid-template-columns: auto 1fr;
         &:before {
             inset: 8px;
         }
@@ -484,9 +492,6 @@ export default defineComponent({
                 pointer-events: auto;
                 opacity: 1;
             }
-            .sidebar {
-                padding-bottom: 0;
-            }
             .sidebar-driver {
                 display: inline;
                 width: 158px;
@@ -496,7 +501,7 @@ export default defineComponent({
             }
         }
         .content {
-            grid-area: 2 / 1 / auto / span 4;
+            grid-area: 2 / 1 / auto / span 5;
             padding: 0 0 0 8px;
             transition: all 0.3s ease;
             overflow: hidden;

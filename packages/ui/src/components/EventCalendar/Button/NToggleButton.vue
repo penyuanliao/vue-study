@@ -61,6 +61,11 @@ export default defineComponent({
     cursor: pointer;
     user-select: none;
     transition: background-color 0.2s ease-in-out;
+    &:hover {
+        border: white 1px solid;
+        background: #F15624;
+        color: white;
+    }
 }
 .selected {
     border: white 1px solid;
