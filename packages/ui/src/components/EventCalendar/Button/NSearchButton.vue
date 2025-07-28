@@ -23,35 +23,40 @@ export default defineComponent({
     },
     emits: ['submit', 'open'],
     setup(props, { emit }) {
+        // 文字輸入框
         const searchContainer = ref<HTMLDivElement>();
+        // 標籤
         const searchTags = ref<string[]>([]);
+        // 輸入的文字
         const inputValue = ref<string>('');
-
         // 開啟搜尋
         const isOpened = ref<boolean>(false);
         // 進行收尋
         const isSearching = ref<boolean>(false);
-
+        // 聚焦離開
+        const isDown = ref<boolean>(false);
         // 開啟搜尋
         const onOpenHandle = () => {
+            isDown.value = false;
             if (isOpened.value) {
                 isSearching.value = true;
                 emit('submit', inputValue.value);
                 isOpened.value = true;
-
                 if (inputValue.value.length === 0) {
-                    isOpened.value = !isOpened.value;
+                    isOpened.value = false;
                     isSearching.value = false;
                 }
             } else {
-                isOpened.value = !isOpened.value;
+                isOpened.value = true;
                 isSearching.value = false;
             }
             emit('open', isOpened.value);
         };
-        const onInputChangeHandle = (inputStr: string) => {
-            console.log('onInputChangeHandle', inputStr);
-            onOpenHandle();
+        const onWillOpenHandle = () => {
+            isDown.value = true; // 檢查是否按下按鈕
+        }
+        const onInputChangeHandle = () => {
+            if (!isDown.value) onOpenHandle();
         };
         const resize = () => {
             const container = searchContainer.value;
@@ -76,6 +81,7 @@ export default defineComponent({
             inputValue,
             searchTags,
             onOpenHandle,
+            onWillOpenHandle,
             onInputChangeHandle,
             isOpened,
             isSearching
@@ -115,6 +121,7 @@ export default defineComponent({
                 'searching': isSearching
             }"
             @pointerup="onOpenHandle"
+            @pointerdown="onWillOpenHandle"
         >
             <span class="search-icon">
                 <NSymbols name="search" width="100%" height="100%" />

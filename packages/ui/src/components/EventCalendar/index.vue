@@ -1,20 +1,20 @@
 <script lang="ts">
 // @ts-nocheck
-import { defineComponent, onMounted, ref } from "vue";
+import { defineComponent, onMounted, ref } from 'vue';
 import NCalendarContent from './NCalendarContent/index.vue';
-import GridType from '@/components/EventCalendar/NCalendarContent/GridType.vue';
-import NSearchButton from '@/components/EventCalendar/Button/NSearchButton.vue';
-import NToggleButton from '@/components/EventCalendar/Button/NToggleButton.vue';
+import GridType from './NCalendarContent/GridType.vue';
+import NSearchButton from './Button/NSearchButton.vue';
+import NToggleButton from './Button/NToggleButton.vue';
 import NEventCalendarToolbar from '@/components/EventCalendar/NCalendarToolbar/index.vue';
 import NSidebar from '@/components/EventCalendar/NSidebar/index.vue';
-import NDialog from "@/components/EventCalendar/Tips/NDialog.vue";
+import NDialog from '@/components/EventCalendar/Tips/NDialog.vue';
 import useEventCalendar, { ICalendars, IEvents, popupTipsManager } from '@/components/EventCalendar/useEventCalendar.ts';
 import json from './data.json';
 import month6 from './data2.json';
 import month5 from './dataMonth5.json';
 import month7 from './dataMonth7.json';
-import useNTouchMove from "@/components/EventCalendar/NTouchMove/useNTouchMove";
-import NSymbols from "@/components/EventCalendar/Button/NSymbols.vue";
+import useNTouchMove from '@/components/EventCalendar/NTouchMove/useNTouchMove';
+import NSymbols from '@/components/EventCalendar/Button/NSymbols.vue';
 
 export default defineComponent({
     name: 'EventCalendar',
@@ -32,8 +32,8 @@ export default defineComponent({
         // DEMO
         const apiData = ref(json);
         const current = ref<any>(null);
-        const now = new Date('2024/6/1');
-        const popupTips = ref<boolean>(false);
+        const now = new Date('2024/6/1'); // 今天時間
+        const popupTips = ref<boolean>(false); // 是否開啟最新資訊提示
         const isCurrentMonth = ref<boolean>(false);
         const activeDate = ref<Date>(new Date('2024/08/02')); // safari 要到日不能只有月份
         const calendars = ref<ICalendars[]>([]);
@@ -100,6 +100,7 @@ export default defineComponent({
                 });
             }
         };
+
         const onSearchOpenHandle = (value: boolean) => {
             const isMobile: boolean = (window.innerWidth < 960);
             if (isMobile) {
@@ -113,8 +114,9 @@ export default defineComponent({
             showSidebar.value = !showSidebar.value;
             console.log("showSidebar", showSidebar.value);
         }
+        // 按下月份
         const onClickCalendarThHandle = (th: string) => {
-            const [ year, month ] = th.split("/");
+            const [ _, month ] = th.split("/");
             const selectMonth: string = (th.split('/') <= 2) ? `${th}/1` : th;
             console.log(`onClickCalendarThHandle: ${selectMonth}`, selectMonth.indexOf('2024/06'), activeDate.value.getMonth() === now.getMonth());
             activeDate.value = new Date(selectMonth);
@@ -165,7 +167,6 @@ export default defineComponent({
                     console.log('events:', events.value);
                     console.log('monthIsUpdate:', eventCalendar.monthIsUpdate);
                     touchManager.clear();
-
                 }
             });
             popupTips.value = !popupTipsManager.getStatus('event-calendar-popup-tips');
@@ -368,13 +369,17 @@ export default defineComponent({
         grid-column: 1 / span 1;
         margin-right: 4px;
         width: 100%;
-        min-width: 220px;
+        max-width: 220px;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 3;
         .sidebar-driver {
             display: none;
+        }
+        @media (min-width: 1793px) {
+            max-width: none;
         }
     }
     .content {

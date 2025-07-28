@@ -100,7 +100,7 @@ export default defineComponent({
     <div class="calendar-content" ref="container">
         <!-- 日曆標題 -->
         <div class="calendar-title">
-            <div class="daily-timeline">
+            <div class="days-in-month-scale">
                 <div
                     v-for="i in daysInMonth"
                     :key="i"
@@ -128,7 +128,7 @@ export default defineComponent({
             <div
                 class="current-line"
                 :style="{
-                    left: `calc(var(--daily-timeline-size) * ${daily} - 1px)`,
+                    left: `calc(var(--days-in-month-scale-size) * ${daily} - 1px)`,
                     opacity: isThisMonth ? 1 : 0
                 }"
             />
@@ -166,7 +166,7 @@ export default defineComponent({
                         :tag="event.coTag"
                         :link="event.link"
                         :color="event.color"
-                        :icon="event.area.span <= 3"
+                        :icon="event.area.span <= 2"
                         :continued="isContinued(event.startTime)"
                         :continuing="isContinuing(event.endedTime)"
                     >
@@ -181,26 +181,26 @@ export default defineComponent({
 @use '../theme';
 
 .calendar-content {
-    --daily-timeline-size: 46px; //46
+    --days-in-month-scale-size: 46px;
     --days-in-month: 32;
     --days-in-next-month: 0;
     width: 100%;
     height: 100%;
     display: flex;
     min-height: 300px; // 776px
-    max-width: calc(var(--daily-timeline-size) * var(--days-in-month, 32));
+    max-width: calc(var(--days-in-month-scale-size) * var(--days-in-month, 32));
     flex-direction: column;
 }
 .calendar-title {
-    height: 63px; // 47
+    height: 63px;
     flex-shrink: 0;
-    .daily-timeline {
+    .days-in-month-scale {
         display: flex;
         flex-direction: row;
-        padding-left: calc(var(--daily-timeline-size)/2);
+        padding-left: calc(var(--days-in-month-scale-size)/2);
         padding-top: 13px;
         div {
-            width: var(--daily-timeline-size);
+            width: var(--days-in-month-scale-size);
             height: 42px;
             font-size: 19px;
             position: relative;
@@ -243,14 +243,14 @@ export default defineComponent({
 
 .calendar-wrap {
     &.grid {
-        width: calc(var(--daily-timeline-size) * var(--days-in-month, 32));
+        width: calc(var(--days-in-month-scale-size) * var(--days-in-month, 32));
         height: 100%;
         background: repeating-linear-gradient(
                 to right,
                 #DFDFDF 0px,
-                #DFDFDF calc(var(--daily-timeline-size) - 1px),
-                white calc(var(--daily-timeline-size) - 1px),
-                white var(--daily-timeline-size)
+                #DFDFDF calc(var(--days-in-month-scale-size) - 1px),
+                white calc(var(--days-in-month-scale-size) - 1px),
+                white var(--days-in-month-scale-size)
         );
         padding: 28px 0 40px;
     }
@@ -260,14 +260,14 @@ export default defineComponent({
         position: absolute;
         right: 0;
         top: 0;
-        width: calc(var(--daily-timeline-size) * var(--days-in-next-month, 0));
+        width: calc(var(--days-in-month-scale-size) * var(--days-in-next-month, 0));
         height: 100%;
         background: repeating-linear-gradient(
                 to right,
                 #f1f1f1 0px,
-                #f1f1f1 calc(var(--daily-timeline-size) - 1px),
-                transparent calc(var(--daily-timeline-size) - 1px),
-                transparent var(--daily-timeline-size)
+                #f1f1f1 calc(var(--days-in-month-scale-size) - 1px),
+                transparent calc(var(--days-in-month-scale-size) - 1px),
+                transparent var(--days-in-month-scale-size)
         );
         padding: 28px 0;
         border-top-right-radius: 30px;
@@ -289,7 +289,7 @@ export default defineComponent({
 
     .grid-content {
         display: grid;
-        grid-template-columns: repeat(32, var(--daily-timeline-size));
+        grid-template-columns: repeat(32, var(--days-in-month-scale-size));
         //overflow: hidden;
         /** 白線 */
         margin-right: 1px;

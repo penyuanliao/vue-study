@@ -21,7 +21,6 @@ export default defineComponent({
             emit('update:selected', selected);
             emit('selected', selected);
         };
-
         return {
             onSelectedHandle
         };

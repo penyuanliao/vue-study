@@ -1,8 +1,10 @@
 <script lang="ts">
 import { defineComponent, ref, watch } from 'vue';
+import NSymbols from "../Button/NSymbols.vue";
 
 export default defineComponent({
     name: 'GridType',
+    components: { NSymbols },
     emits: ['change', 'update:selected'],
     props: {
         selected: {
@@ -11,7 +13,7 @@ export default defineComponent({
         }
     },
     setup(props) {
-        const layout = ref(props.selected);
+        const layout = ref<'small' | 'medium' | string>(props.selected);
         watch(() => props.selected, (value) => {
             layout.value = value;
         });
@@ -40,41 +42,7 @@ export default defineComponent({
                 @change="onChangeHandle"
             />
             <span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="22"
-                    viewBox="0 0 24 22"
-                    fill="none"
-                >
-                    <rect
-                        width="24"
-                        height="4"
-                        rx="2"
-                        fill="currentColor"
-                    />
-                    <rect
-                        y="6"
-                        width="24"
-                        height="4"
-                        rx="2"
-                        fill="currentColor"
-                    />
-                    <rect
-                        y="12"
-                        width="24"
-                        height="4"
-                        rx="2"
-                        fill="currentColor"
-                    />
-                    <rect
-                        y="18"
-                        width="24"
-                        height="4"
-                        rx="2"
-                        fill="currentColor"
-                    />
-                </svg>
+                <NSymbols name="girdTypeSmall" />
             </span>
         </label>
         <label
@@ -89,27 +57,7 @@ export default defineComponent({
                 @change="onChangeHandle"
             />
             <span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="22"
-                    viewBox="0 0 24 22"
-                    fill="none"
-                >
-                    <rect
-                        width="24"
-                        height="10"
-                        rx="3"
-                        fill="currentColor"
-                    />
-                    <rect
-                        y="12"
-                        width="24"
-                        height="10"
-                        rx="3"
-                        fill="currentColor"
-                    />
-                </svg>
+                <NSymbols name="girdTypeMedium" />
             </span>
         </label>
     </div>

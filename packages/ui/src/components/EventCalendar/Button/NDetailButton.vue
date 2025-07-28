@@ -20,7 +20,6 @@ export default defineComponent({
         :style="{
             '--detail-bg-color': color
         }"
-
     >
         <div class="label">
             <slot>详情</slot>

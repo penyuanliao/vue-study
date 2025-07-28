@@ -25,7 +25,7 @@ export interface IGridArea {
     span: number,
     fragments: { columnStart: number, span: number }[]
 }
-
+// 記錄在localStorage
 export const popupTipsManager = (() => {
     const get = (key: string) => localStorage.getItem(key) || '';
     const set = (key:string, value: string | object) => {
@@ -49,11 +49,10 @@ export const popupTipsManager = (() => {
         setStatus
     };
 })();
-
+// 行事曆資料
 const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = false) => {
     const recentlyUpdatedEndTime: number = 7 * 60 * 60 * 24 * 1000;
     const rowsMap = new Map();
-
     // 檢查活動是否開始
     const isContinued = (time: Date) => (time.getMonth() !== activeDate.getMonth());
     // 檢查活動是否該月結束
@@ -62,6 +61,7 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
         if (time.getFullYear() > activeDate.getFullYear() && lastDay) return true;
         return (time.getMonth() !== activeDate.getMonth() && lastDay);
     };
+    // 每個area位置的fragment
     const setFragment = (rows: Map<number, IGridArea>, key: number, fragment: number, span: number) => {
         const fragments: { columnStart: number, span: number }[] = rows.has(key) ? (rows?.get(key)?.fragments || []) : [];
         if (fragment >= 1) {
@@ -82,10 +82,9 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
         const keys: number[] = [...rows.keys()];
         for (let j = 0; j < keys.length; j += 1) {
             const key = keys[j];
-            const { columnStart, span } = rows.get(key) || { columnStart: 0, span: 0 };
+            const { columnStart, span,  } = rows.get(key) || { columnStart: 0, span: 0 };
+            fragments = rows.get(key)?.fragments || [];
             if (eventColumnStart > (columnStart - 1) + span) {
-                // console.log(`rows`, key, eventColumnStart, span);
-                fragments = rows.get(key)?.fragments || [];
                 fragment = eventColumnStart - (columnStart + span);
                 if (fragment > 1) {
                     fragments = setFragment(rows, key, columnStart + span, eventColumnStart - (columnStart + span));
@@ -99,38 +98,25 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
                 if (event && event.area) event.area.rowStart = key;
                 return;
             }
-            if (rows?.get(key)?.fragments && (rows?.get(key)?.fragments || []).length > 0) {
-                // 13, 13
-                // 19, 5
-                const seeds = rows.get(key)?.fragments || [];
-                for (let i = 0; i < seeds.length; i += 1) {
-                    const seed: { columnStart: number, span: number } = seeds[i];
-                    // const leftSpace: any = {
-                    //     columnStart: seed.columnStart,
-                    //     span: eventColumnStart - seed.columnStart
-                    // };
+            if (fragments.length > 0) {
+                for (let i = 0; i < fragments.length; i += 1) {
+                    const seed: { columnStart: number, span: number } = fragments[i];
 
                     const space: number = (eventColumnStart - seed.columnStart) + eventSpan;
-
-                    // const rightSpace: any = {
-                    //     columnStart: eventColumnStart + eventSpan,
-                    //     span: seed.span - space
-                    // };
 
                     if (eventColumnStart >= seed.columnStart
                         && space <= seed.span) {
                         // eslint-disable-next-line no-param-reassign
                         if (event && event.area) event.area.rowStart = key;
                         setFragment(rows, key, seed.columnStart, eventColumnStart - seed.columnStart);
-                        seeds[i].columnStart = eventColumnStart + eventSpan;
-                        seeds[i].span = seed.span - space;
+                        fragments[i].columnStart = eventColumnStart + eventSpan;
+                        fragments[i].span = seed.span - space;
                         return;
                     }
                 }
             }
             currentRow = key;
         }
-        // console.log("currentRow", currentRow, event.area.rowStart);
         // eslint-disable-next-line no-param-reassign
         if (event && event.area) event.area.rowStart = currentRow + 1;
         fragment = eventColumnStart - 1;
@@ -141,10 +127,6 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
                 1,
                 eventColumnStart - 1
             );
-            // if (event.title === 'GG电子') console.log(`GG电子 key: ${currentRow + 1}
-            //         # fragment: ${fragment}
-            //         # columnStart: ${eventColumnStart} span: ${event.area.span}`);
-            // if (event.title === 'GG电子') console.log("GG电子 fragments:", fragments);
         }
         rows.set(currentRow + 1, {
             columnStart: eventColumnStart,
@@ -179,9 +161,10 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
         }
         return { rowStart: index, columnStart: offset, span: space, fragments: [] };
     };
+    // 產生活動資料
     const setupEvents = (event_list: any, color: string, calendar: ICalendars, startIndex: number = 0) => {
-        const events: IEvents[] = [];
-        let monthIsUpdate: boolean = false;
+        const events: IEvents[] = []; // 所有活動
+        let monthIsUpdate: boolean = false; // 月份是否有異動
         event_list.forEach(({ company_name, start_at, end_at, title, tooltip_title, updated_at, link_text, link }: any) => {
             const isUpdate = (Date.now() - new Date(updated_at).getTime()) < recentlyUpdatedEndTime;
             const startTime: string = start_at.substring(0, 10).replace(/-/g, '/');
@@ -206,6 +189,7 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
         });
         return { events, monthIsUpdate };
     };
+    // 初始化
     const setup = (source: any) => {
         const calendars: ICalendars[] = [];
         const events: IEvents[] = [];
@@ -236,7 +220,9 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
         calendars,
         events,
         monthIsUpdate,
-        deflateRow
+        deflateRow,
+        isContinued,
+        isContinuing
     };
 };
 
