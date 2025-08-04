@@ -1,6 +1,6 @@
 <script lang="ts">
 import { defineComponent, ref, watch } from 'vue';
-import NSymbols from "../Button/NSymbols.vue";
+import NSymbols from '../Button/NSymbols.vue';
 
 export default defineComponent({
     name: 'GridType',
@@ -12,17 +12,15 @@ export default defineComponent({
             default: 'small'
         }
     },
-    setup(props) {
-        const layout = ref<'small' | 'medium' | string>(props.selected);
-        watch(() => props.selected, (value) => {
-            layout.value = value;
-        });
-        return { layout };
-    },
-    methods: {
-        onChangeHandle() {
-            this.$emit('update:selected', this.layout);
-            this.$emit('change', this.layout);
+    computed: {
+        layout: {
+            get() {
+                return this.selected;
+            },
+            set(value: string) {
+                this.$emit('update:selected', value);
+                this.$emit('change', value);
+            }
         }
     }
 });
@@ -31,33 +29,21 @@ export default defineComponent({
 <template>
     <div class="button-group">
         <label
+            v-for="type in ['small', 'medium']"
+            :key="type"
             class="layout-option"
-            :class="{ selected: layout === 'small' }"
+            :class="{ selected: layout === type }"
         >
             <input
                 type="radio"
                 name="calendar-layout"
-                value="small"
+                :value="type"
                 v-model="layout"
-                @change="onChangeHandle"
             />
             <span>
-                <NSymbols name="girdTypeSmall" />
-            </span>
-        </label>
-        <label
-            class="layout-option"
-            :class="{ selected: layout === 'medium' }"
-        >
-            <input
-                type="radio"
-                name="calendar-layout"
-                value="medium"
-                v-model="layout"
-                @change="onChangeHandle"
-            />
-            <span>
-                <NSymbols name="girdTypeMedium" />
+                <NSymbols
+                    :name="type === 'small' ? 'girdTypeSmall' : 'girdTypeMedium'"
+                />
             </span>
         </label>
     </div>
@@ -67,7 +53,7 @@ export default defineComponent({
 @use '../theme';
 
 .button-group {
-    height: 100px;
+    height: 100%;
     min-width: 36px;
     position: relative;
     align-items: center;
@@ -91,7 +77,7 @@ export default defineComponent({
             scale: .9;
         }
         &:hover {
-            color: #444746;
+            //color: #444746;
         }
     }
 }
@@ -101,7 +87,12 @@ input {
 
 @media (max-width: 959px) {
     .button-group {
-        height: 64px;
+        .layout-option {
+            width: 28px;
+        }
+        .layout-option > span {
+            scale: 0.834;
+        }
     }
 }
 </style>

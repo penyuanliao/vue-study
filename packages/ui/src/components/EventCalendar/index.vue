@@ -14,7 +14,7 @@ import month6 from './data2.json';
 import month5 from './dataMonth5.json';
 import month7 from './dataMonth7.json';
 import useNTouchMove from '@/components/EventCalendar/NTouchMove/useNTouchMove';
-import NSymbols from '@/components/EventCalendar/Button/NSymbols.vue';
+import NSymbols from './Button/NSymbols.vue';
 
 export default defineComponent({
     name: 'EventCalendar',
@@ -110,10 +110,6 @@ export default defineComponent({
             }
             console.log("onSearchOpenHandle", isMobile, value);
         };
-        const onClickSidebarMenuHandle = () => {
-            showSidebar.value = !showSidebar.value;
-            console.log("showSidebar", showSidebar.value);
-        }
         // 按下月份
         const onClickCalendarThHandle = (th: string) => {
             const [ _, month ] = th.split("/");
@@ -160,6 +156,7 @@ export default defineComponent({
                 const eventCalendar = useEventCalendar(apiData.value, act, isDeflate.value);
                 fourMonthlyPeriod.value[index].isUpdate = eventCalendar.monthIsUpdate;
                 if (act.getMonth() === now.getMonth()) {
+                    isCurrentMonth.value = true;
                     calendars.value = eventCalendar.calendars;
                     events.value = eventCalendar.events;
                     activeDate.value = act;
@@ -170,9 +167,6 @@ export default defineComponent({
                 }
             });
             popupTips.value = !popupTipsManager.getStatus('event-calendar-popup-tips');
-            console.log("contentRef", contentRef.value);
-
-
         });
         return {
             contentRef,
@@ -193,7 +187,6 @@ export default defineComponent({
             onSearchOpenHandle,
             onClickThisMonthHandle,
             onClickCalendarThHandle,
-            onClickSidebarMenuHandle,
             gridType
         };
     }
@@ -235,35 +228,38 @@ export default defineComponent({
                     @open="onSearchOpenHandle"
                 />
             </div>
-            <!-- Mobile -->
-            <div
-                class="sidebar-menu"
-                @pointerup="onClickSidebarMenuHandle"
-            >
-                <NSymbols name="menu" />
-            </div>
             <!-- 標籤 -->
             <div
                 class="sidebar-collapse"
-                :class="{
-                    active: showSidebar
-                }"
             >
                 <NSidebar
                     class="sidebar"
-                    :class="{
-                        active: showSidebar
-                    }"
                     v-model:calendars="calendars"
                 />
-                <div class="sidebar-driver" />
                 <!-- Mobile -->
                 <div class="grid-type-group-mobile">
-                    <div class="button-group-title">Grid Type</div>
-                    <GridType
-                        v-model:selected="gridType"
-                        @change="gridTypeChange"
-                    />
+<!--                    <GridType-->
+<!--                        v-model:selected="gridType"-->
+<!--                        @change="gridTypeChange"-->
+<!--                    />-->
+                    <div
+                        class="gt-btn"
+                        @pointerup="gridTypeChange(gridType === 'small' ? 'medium' : 'small')"
+                    >
+                        <span
+                            v-show="gridType === 'small'"
+                            :style="{
+                                color: gridType === 'small' ? '#DFDFDF' : '#606060'
+                            }"
+                        >
+                            <NSymbols name="girdTypeSmall" />
+                        </span>
+                        <span
+                            v-show="gridType === 'medium'"
+                        >
+                            <NSymbols name="girdTypeMedium" />
+                        </span>
+                    </div>
                 </div>
             </div>
             <div
@@ -277,13 +273,6 @@ export default defineComponent({
                     :selected="isCurrentMonth"
                 />
             </div>
-            <div
-                :class="{
-                    mask: true,
-                    active: showSidebar,
-                }"
-                @pointerup="onClickSidebarMenuHandle"
-            />
         </div>
         <NDialog
             v-model:open="popupTips"
@@ -302,7 +291,7 @@ export default defineComponent({
     max-width: 1920px;
     height: 100%;
     width: 100%;
-    background: #F15624;
+    background: white;
     position: relative;
     //padding: 29px 52px;
     padding: 19px 12px;
@@ -316,14 +305,14 @@ export default defineComponent({
     width: 100%;
     height: 100%;
     min-width: 0;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(159, 159, 159, 0.1);
     position: relative;
     display: grid;
     grid-template-columns: auto 1fr;
     grid-column-gap: 0;
     align-items: start;
     border-radius: 30px;
-    border: rgba(255, 255, 255, 0.3) 1px solid;
+    border: rgba(159, 159, 159, 0.3) 1px solid;
     padding: 30px 20px;
     z-index: 0;
     &:before {
@@ -362,9 +351,6 @@ export default defineComponent({
         }
 
     }
-    .sidebar-menu {
-        display: none;
-    }
     .sidebar-collapse {
         grid-column: 1 / span 1;
         margin-right: 4px;
@@ -375,9 +361,6 @@ export default defineComponent({
         align-items: center;
         justify-content: center;
         flex-shrink: 3;
-        .sidebar-driver {
-            display: none;
-        }
         @media (min-width: 1793px) {
             max-width: none;
         }
@@ -453,60 +436,22 @@ export default defineComponent({
                 display: none;
             }
         }
-        .sidebar-menu {
-            display: inline;
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            top: 30px;
-            left: 25px;
-            pointer-events: auto;
-            z-index: 31;
-        }
         .sidebar-collapse {
             width: auto;
-            height: auto;
+            height: 40px;
+            overflow: hidden;
             max-width: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            grid-area: 1 / 1 / auto / span 1;
+            grid-area: 2 / 1 / auto / span 6;
             z-index: 30;
-            padding: 10px 10px 10px;
-            opacity: 0;
-            pointer-events: none;
             transition: opacity .3s ease-in-out;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
-            &:before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 203px;
-                height: 100%;
-                background: white;
-                margin: 10px 10px 10px 10px;
-                border-radius: 10px;
-                box-shadow: 0 10px 20px 0 #00000080;
-                z-index: -1;
-            }
-            &.active {
-                pointer-events: auto;
-                opacity: 1;
-            }
-            .sidebar-driver {
-                display: inline;
-                width: 158px;
-                height: 1px;
-                background: #DFDFDF;
-                margin-top: 14px;
-            }
+            pointer-events: auto;
         }
         .content {
-            grid-area: 2 / 1 / auto / span 5;
+            grid-area: 3 / 1 / auto / span 5;
             padding: 0 0 0 8px;
             transition: all 0.3s ease;
             overflow: hidden;
@@ -521,14 +466,20 @@ export default defineComponent({
         display: flex;
         flex-direction: row;
         align-items: center;
-        padding-right: 10px;
-        .button-group-title {
-            font-size: 19px;
-            font-weight: 500;
-            color: #606060;
-            padding-right: 6px;
-            user-select: none;
-            line-height: 28px;
+        //padding-right: 10px;
+        .gt-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-left: 4px;
+            span {
+                color: #F15624;
+                scale: 0.80;
+            }
         }
     }
     .search-btn {

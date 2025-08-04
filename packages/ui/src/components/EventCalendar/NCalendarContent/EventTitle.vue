@@ -119,7 +119,6 @@ export default defineComponent({
         // 滑動事件singleton
         const touchManager = useNTouchMove();
         const touchPage = computed(() => touchManager.page.value);
-        const isFocus = ref<boolean>(false);
         // 參數
         const range: IEventTitleVars = {
             sizeWidth: 0,
@@ -476,7 +475,8 @@ export default defineComponent({
                 endedSpan,
                 endedBack,
                 offsetStart,
-                offsetEnded
+                offsetEnded,
+                currSpan
             } = range;
 
             let visibility: string = 'visible';
@@ -486,13 +486,15 @@ export default defineComponent({
             if (props.icon && !isHover.value) {
                 return { visibility };
             }
-
+            const { cell } = touchManager.info.value;
+            const finalPage: boolean = page === touchManager.maxPage.value;
             // 最後一頁
-            if (page === touchManager.maxPage.value) {
+            if (finalPage) {
                 if (props.columnStart <= offsetStart) {
+                    // 上一頁就開始的
                     indentWidth -= touchManager.info.value.added;
                 } else {
-                    indentWidth -= endedBack % 46;
+                    // indentWidth -= endedBack % 46;
                 }
             }
 
@@ -501,7 +503,6 @@ export default defineComponent({
 
             // 檢查是否從這頁開始
             const between: boolean = start >= offsetStart && start <= offsetEnded;
-
             if (isHover.value) {
                 // left = 0;
                 if (props.icon) {
@@ -534,10 +535,18 @@ export default defineComponent({
             //     backWidth: ${touchManager.info.value.cell - Math.floor(endedBack / 46)} ${endedBack % 46}
             //     offsetStart: ${offsetStart} offsetEnded: ${offsetEnded} between:${between}
             //     `);
+
+            let width: string = 'calc(100% - 25px)';
+            const endLeftStart: number = (32 - cell);
+            if (currSpan <= 3) {
+                width = `${currSpan * 46 - 10}px`;
+            }
+
             return {
                 visibility,
                 maxWidth: `${touchManager.info.value.width + touchManager.info.value.added - 25}px`,
-                left: `${Math.max(left + indentWidth, 0)}px`
+                left: `${Math.max(left + indentWidth, 0)}px`,
+                width
             };
         };
         const measureWordWidth = async (value: string) => {
@@ -580,7 +589,7 @@ export default defineComponent({
                 currSpan
             } = range;
             const cellsWidth: number = currSpan * 46;
-
+/*
             console.log(`event-title ${props.title} isMobile: ${isMobile.value}
             startPage: ${startPage} startSpan: ${startSpan}
             endedPage: ${endedPage} endedSpan: ${endedSpan} |currSpan: ${currSpan}|
@@ -589,7 +598,7 @@ export default defineComponent({
             cellsWidth: ${cellsWidth} : ${textWidth.value} : ${eTimeWidth.value}
             Return: ${cellsWidth < eTimeWidth.value}
             titleRef: ${titleRef.value?.offsetWidth}
-            `);
+            `);*/
             const target: HTMLElement | null = container.value;
             if (target) {
                 target.style.minWidth = '100%';
@@ -1019,7 +1028,7 @@ export default defineComponent({
             pointer-events: none;
         }
         .event-content {
-            min-width: calc(46px * 2);
+            //min-width: calc(46px * 2);
             .event-date {
                 font-size: 12px;
                 margin-bottom: 0;

@@ -1,6 +1,6 @@
 <script lang="ts">
 import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
-import NSymbols from "./NSymbols.vue";
+import NSymbols from './NSymbols.vue';
 
 export default defineComponent({
     name: 'NClearInput',
@@ -26,7 +26,7 @@ export default defineComponent({
         };
         const onInputFocusoutHandle = () => {
             if (!searchValue.value) {
-                emit('change', searchValue.value);
+                // emit('change', searchValue.value);
             }
         }
         const onKeyupHandle = (e: KeyboardEvent) => {

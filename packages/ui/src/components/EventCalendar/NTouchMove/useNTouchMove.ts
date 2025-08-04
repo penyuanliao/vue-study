@@ -61,13 +61,15 @@ const createManager = () => {
         }
         const deltaX = clientX - moveStartX;
         let left: number = 0;
-
-
         if (deltaX < -100) {
             if (page.value + 1 > maxPage.value) return;
             if (focusElement.value) focusElement.value.blur();
             page.value += 1;
-            left = info.value.width * page.value - inset;
+            if (page.value === maxPage.value) {
+                left = info.value.scrollWidth; // 最後一頁直接靠右
+            } else {
+                left = info.value.width * page.value - inset;
+            }
             if (el) el.scrollTo({ left, behavior: 'smooth' });
             info.value.x = left;
         } else if (deltaX > 100) {
@@ -94,6 +96,7 @@ const createManager = () => {
         page.value = 0;
         el.scrollTo(0, 0);
         console.log(`maxWidth.value : ${(info.value.cell - (32 % info.value.cell)) * 46}
+            added: ${info.value.added}
             x: ${info.value.x} max: ${maxPage.value} cell: ${info.value.cell}
             ${el.clientWidth % info.value.cell} + ${info.value.cell - (32 % info.value.cell)} * 46
             backWidth: ${info.value.backWidth} ${info.value.width * (maxPage.value + 1)} ${maxWidth.value}
@@ -131,6 +134,7 @@ const createManager = () => {
 
     const getPositionX = () => el?.scrollLeft || 0;
 
+    // eslint-disable-next-line no-return-assign,@typescript-eslint/no-shadow
     const setFocusElement = (el: HTMLElement | null) => focusElement.value = el;
 
     const clear = () => {

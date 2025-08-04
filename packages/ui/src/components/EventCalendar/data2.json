@@ -2,13 +2,13 @@
   {
     "id": 204,
     "calendar_id": 84,
-    "title": "本月包网专属活动",
+    "title": "独家活动",
     "color_code": "#e84462",
     "sort": 4,
     "created_by": 397,
     "updated_by": null,
     "created_at": "2024-05-10 14:00:20",
-    "updated_at": "2024-06-12 10:28:10",
+    "updated_at": "2025-07-29 10:28:10",
     "deleted_at": null,
     "active": true,
     "event_list": [
@@ -23,7 +23,7 @@
         "created_by": 397,
         "updated_by": 545,
         "created_at": "2024-06-14 10:29:54",
-        "updated_at": "2025-02-04 09:01:53",
+        "updated_at": "2025-07-29 09:01:53",
         "period": true,
         "sort": 95,
         "link_text": "点击观看",
@@ -237,7 +237,7 @@
   {
     "id": 206,
     "calendar_id": 84,
-    "title": "本月新活动",
+    "title": "本月上线",
     "color_code": "#f5c6a3",
     "sort": 2,
     "created_by": 397,
@@ -692,7 +692,7 @@
   {
     "id": 207,
     "calendar_id": 84,
-    "title": "持续进行中活动",
+    "title": "持续进行",
     "color_code": "#97b192",
     "sort": 1,
     "created_by": 397,
@@ -879,7 +879,7 @@
         }
       },
       {
-        "id": 895,
+        "id": 196,
         "event_group_id": 207,
         "company": 99,
         "title": "欢钓锦标赛 (第一阶段锦标赛)",
@@ -895,6 +895,24 @@
         "link_text": "点击观看",
         "tooltip_title": "欢钓锦标赛 (第一阶段锦标赛)",
         "company_name": "CS电子"
+      },
+      {
+        "id": 195,
+        "event_group_id": 207,
+        "company": 99,
+        "title": "欢钓锦标赛 (第一阶段锦标赛)",
+        "start_at": "2024-06-06 00:00:00",
+        "end_at": "2024-06-10 00:00:00",
+        "link": "https://spade-event.com/enews/event/2024_Fishing_Frenzy_Tournament_BBIN/",
+        "created_by": 397,
+        "updated_by": 397,
+        "created_at": "2024-05-10 14:13:43",
+        "updated_at": "2024-05-24 11:45:04",
+        "period": false,
+        "sort": 80,
+        "link_text": "点击观看",
+        "tooltip_title": "欢钓锦标赛 (第一阶段锦标赛)",
+        "company_name": "TS电子"
       }
     ]
   }

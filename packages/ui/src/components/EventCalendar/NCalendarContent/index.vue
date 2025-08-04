@@ -1,5 +1,5 @@
 <script lang="ts">
-import { computed, defineComponent, onMounted, PropType, ref, watch } from 'vue';
+import { computed, defineComponent, onMounted, PropType, ref, toRef, watch } from 'vue';
 import EventTitle from './EventTitle.vue';
 import { IEvents } from '../useEventCalendar';
 
@@ -22,47 +22,48 @@ export default defineComponent({
         }
     },
     setup(props) {
+        const activeDate = toRef(props, 'activeDate');
         const container = ref<HTMLElement | null>(null);
         const currentDate = new Date('2024/06/09'); // 今天
         const dayOfWeek = currentDate.getDay();
         const daily = currentDate.getDate();
-        const daysInMonth = computed(() => new Date(props.activeDate.getFullYear(), props.activeDate.getMonth() + 1, 0).getDate());
-        const nextMonth = computed(() => new Date(props.activeDate.getFullYear(), props.activeDate.getMonth() + 2, 0).getDate());
+        const daysInMonth = computed(() => new Date(activeDate.value.getFullYear(), activeDate.value.getMonth() + 1, 0).getDate());
+        const nextMonth = computed(() => new Date(activeDate.value.getFullYear(), activeDate.value.getMonth() + 2, 0).getDate());
         // 這個月的第一天是星期幾
-        const firstDayOfMonth = computed(() => new Date(props.activeDate.getFullYear(), props.activeDate.getMonth(), 1).getDay());
+        const firstDayOfMonth = computed(() => new Date(activeDate.value.getFullYear(), activeDate.value.getMonth(), 1).getDay());
         const isWeekend = (day: number): boolean => ((firstDayOfMonth.value + (day - 1)) % 7 % 6) === 0;
         // 該月份是否為當月
-        const isThisMonth = computed(() => currentDate.getMonth() === props.activeDate.getMonth()
-            && currentDate.getFullYear() === props.activeDate.getFullYear());
+        const isThisMonth = computed(() => currentDate.getMonth() === activeDate.value.getMonth()
+            && currentDate.getFullYear() === activeDate.value.getFullYear());
 
         const hasSmall = computed(() => props.gridType === 'small');
         // 檢查活動是否開始
-        const isContinued = (startTime: string) => {
+        const isContinued = (startTime: string): boolean => {
             const time = new Date(startTime);
-            return (time.getMonth() !== props.activeDate.getMonth());
+            return (time.getMonth() !== activeDate.value.getMonth());
         };
         const isContinuing = (endedTime: string) => {
             const time = new Date(endedTime);
             const lastDay = time.getDate() > (31 - daysInMonth.value); // 超過該月份最後N天
-            if (time.getFullYear() > props.activeDate.getFullYear() && lastDay) return true;
-            return (time.getMonth() !== props.activeDate.getMonth() && lastDay);
+            if (time.getFullYear() > activeDate.value.getFullYear() && lastDay) return true;
+            return (time.getMonth() !== activeDate.value.getMonth() && lastDay);
         };
         const gridColumn = (startTime: string, endedTime: string, index: number): string => {
             const start = new Date(startTime);
             const ended = new Date(endedTime);
             let space: number;
             let offset: number;
-            if ((start.getFullYear() < props.activeDate.getFullYear())
-                || (start.getMonth() < props.activeDate.getMonth())) {
+            if ((start.getFullYear() < activeDate.value.getFullYear())
+                || (start.getMonth() < activeDate.value.getMonth())) {
                 offset = 1;
             } else {
                 offset = start.getDate();
             }
-            if ((ended.getFullYear() > props.activeDate.getFullYear())
-                || (ended.getMonth() > props.activeDate.getMonth())) {
+            if ((ended.getFullYear() > activeDate.value.getFullYear())
+                || (ended.getMonth() > activeDate.value.getMonth())) {
                 space = daysInMonth.value + 1;
             } else {
-                const startDay: number = start.getMonth() !== props.activeDate.getMonth() ? 0 : start.getDate() - 1;
+                const startDay: number = start.getMonth() !== activeDate.value.getMonth() ? 0 : start.getDate() - 1;
                 space = (ended.getDate() - startDay) + 1;
             }
             // row-start / column-start / row-end / column-end
@@ -118,6 +119,7 @@ export default defineComponent({
                     :class="{
                         weekend: isWeekend(i + daysInMonth),
                     }"
+                    style="opacity: 10%;"
                 >
                     {{ i.toString().padStart(2, '0') }}
                 </div>
@@ -137,41 +139,43 @@ export default defineComponent({
                     'grid-content': true,
                     'small': hasSmall
                 }">
-                <div
-                    v-for="(event, i) in events"
-                    :key="i"
-                    class="item"
-                    :class="{
-                        'item-small': hasSmall,
-                        'hidden': !event.calendar.checked,
-                        'updated': event.isUpdate && !isContinued(event.startTime),
-                    }"
-                    :style="{
-                        'grid-area': `${event.area.rowStart} / ${event.area.columnStart} / auto / span ${event.area.span}`,
-                    }"
+                <template
+                    v-for="(event) in events"
+                    :key="event.id"
                 >
-                    <EventTitle
+                    <div
+                        class="item"
                         :class="{
-                            'continued': isContinued(event.startTime),
-                            'continuing': isContinuing(event.endedTime),
+                            'item-small': hasSmall,
+                            'hidden': !event.calendar.checked,
+                            'updated': event.isUpdate && !isContinued(event.startTime)
                         }"
-                        :columnStart="event.area.columnStart"
-                        :span="event.area.span"
-                        :title="event.title"
-                        :activeDate="activeDate"
-                        :startTime="event.startTime"
-                        :endedTime="event.endedTime"
-                        :eventDesc="event.eventDesc"
-                        :small="hasSmall"
-                        :tag="event.coTag"
-                        :link="event.link"
-                        :color="event.color"
-                        :icon="event.area.span <= 2"
-                        :continued="isContinued(event.startTime)"
-                        :continuing="isContinuing(event.endedTime)"
+                        :style="{
+                            'grid-area': `${event.area.rowStart} / ${event.area.columnStart} / auto / span ${event.area.span}`,
+                        }"
                     >
-                    </EventTitle>
-                </div>
+                        <EventTitle
+                            :class="{
+                                'continued': isContinued(event.startTime),
+                                'continuing': isContinuing(event.endedTime),
+                            }"
+                            :columnStart="event.area.columnStart"
+                            :span="event.area.span"
+                            :title="event.title"
+                            :activeDate="activeDate"
+                            :startTime="event.startTime"
+                            :endedTime="event.endedTime"
+                            :eventDesc="event.eventDesc"
+                            :small="hasSmall"
+                            :tag="event.coTag"
+                            :link="event.link"
+                            :color="event.color"
+                            :icon="event.area.span <= 2"
+                            :continued="isContinued(event.startTime)"
+                            :continuing="isContinuing(event.endedTime)"
+                        />
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -184,6 +188,7 @@ export default defineComponent({
     --days-in-month-scale-size: 46px;
     --days-in-month: 32;
     --days-in-next-month: 0;
+    --calendar-primary-color: 255, 255, 255;
     width: 100%;
     height: 100%;
     display: flex;
@@ -256,19 +261,13 @@ export default defineComponent({
     }
     &.grid:after {
         content: '';
-        visibility: hidden;
+        //visibility: hidden;
         position: absolute;
         right: 0;
         top: 0;
         width: calc(var(--days-in-month-scale-size) * var(--days-in-next-month, 0));
         height: 100%;
-        background: repeating-linear-gradient(
-                to right,
-                #f1f1f1 0px,
-                #f1f1f1 calc(var(--days-in-month-scale-size) - 1px),
-                transparent calc(var(--days-in-month-scale-size) - 1px),
-                transparent var(--days-in-month-scale-size)
-        );
+        background-image: linear-gradient(to right, transparent 10%, rgba(255, 255, 255, 0.6) 100%);
         padding: 28px 0;
         border-top-right-radius: 30px;
         border-bottom-right-radius: 30px;
@@ -361,17 +360,17 @@ export default defineComponent({
 @keyframes pulse-white {
     0% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+        box-shadow: 0 0 0 0 rgba(var(--calendar-primary-color), 0.7);
     }
 
     70% {
         transform: scale(1);
-        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0);
+        box-shadow: 0 0 0 4px rgba(var(--calendar-primary-color), 0);
     }
 
     100% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        box-shadow: 0 0 0 0 rgba(var(--calendar-primary-color), 0);
     }
 }
 @media (max-width: 959px) {

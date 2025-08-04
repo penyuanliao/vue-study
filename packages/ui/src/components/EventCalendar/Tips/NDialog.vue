@@ -67,7 +67,6 @@ export default defineComponent({
             </section>
         </div>
     </Transition>
-
 </template>
 
 <style scoped lang="scss">

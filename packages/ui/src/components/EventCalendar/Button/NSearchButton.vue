@@ -54,7 +54,7 @@ export default defineComponent({
         };
         const onWillOpenHandle = () => {
             isDown.value = true; // 檢查是否按下按鈕
-        }
+        };
         const onInputChangeHandle = () => {
             if (!isDown.value) onOpenHandle();
         };

@@ -4,6 +4,11 @@ div, span, p, a, h1, h2 {
   font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+$primary-color: #F15624;
+$badge-color: red;
+$text-color: #242424;
+$icon-color: white;
+
 .scroll-bar-horizontal {
   &::-webkit-scrollbar {
     height: 6px;
@@ -16,7 +21,7 @@ div, span, p, a, h1, h2 {
     background-color: transparent;
     border-radius: 10px;
   }
-  &::-webkit-scrollbar-thumb{
+  &::-webkit-scrollbar-thumb {
     border-radius: 10px;
     background-color: rgba(30, 31, 34, 0.5);
   }

@@ -1,5 +1,3 @@
-import { computed, Ref } from 'vue';
-
 export interface ICalendars {
     name: string;
     color: string;
@@ -8,6 +6,7 @@ export interface ICalendars {
     sort?: number;
 }
 export interface IEvents {
+    id: number;
     title: string;
     startTime: string;
     endedTime: string;
@@ -165,13 +164,14 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
     const setupEvents = (event_list: any, color: string, calendar: ICalendars, startIndex: number = 0) => {
         const events: IEvents[] = []; // 所有活動
         let monthIsUpdate: boolean = false; // 月份是否有異動
-        event_list.forEach(({ company_name, start_at, end_at, title, tooltip_title, updated_at, link_text, link }: any) => {
+        event_list.forEach(({ id, company_name, start_at, end_at, title, tooltip_title, updated_at, link_text, link }: any) => {
             const isUpdate = (Date.now() - new Date(updated_at).getTime()) < recentlyUpdatedEndTime;
             const startTime: string = start_at.substring(0, 10).replace(/-/g, '/');
             const endedTime: string = end_at.substring(0, 10).replace(/-/g, '/');
             const row: number = startIndex + events.length + 1;
 
             const event: IEvents = {
+                id,
                 title: company_name,
                 startTime,
                 endedTime,
@@ -212,7 +212,6 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
         });
         calendars.sort((a: any, b: any) => a.sort - b.sort);
         // events.sort((a: any, b: any) => a.calendar.sort - b.calendar.sort);
-        console.log([...rowsMap.entries()]);
         return { calendars, events, monthIsUpdate };
     };
     const { calendars, events, monthIsUpdate } = setup(data);

@@ -18,6 +18,8 @@ export default defineComponent({
     },
     emits: ['click'],
     setup(props) {
+        const monthNames: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
         const fourMonthly = computed(() => {
             const monthly = props.fourMonthlyPeriod.map(({ key, isUpdate }: {
                 key: string,
@@ -29,7 +31,8 @@ export default defineComponent({
         const padStart = (value: number) => value.toString().padStart(2, '0');
         return {
             padStart,
-            fourMonthly
+            fourMonthly,
+            monthNames
         };
     },
     methods: {
@@ -56,7 +59,8 @@ export default defineComponent({
                 @click="onClickHandle(`${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`)"
             >
                 <div class="month-name">{{ padStart(date.getMonth() + 1) }}</div>
-                <div class="year-digits">{{ date.getFullYear() }}</div>
+<!--                <div class="year-digits">{{ date.getFullYear() }}</div>-->
+                <div class="year-digits">{{ monthNames[date.getMonth()] }}</div>
                 <NTooltip
                     v-if="isUpdate"
                     class="updated-tooltip"

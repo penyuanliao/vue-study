@@ -169,37 +169,39 @@ export default defineComponent({
     <template
         v-if="name === 'girdTypeSmall'">
         <svg
+            width="25"
+            height="23"
+            viewBox="0 0 25 23"
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="22"
-            viewBox="0 0 24 22"
-            fill="none"
         >
             <rect
-                width="24"
-                height="4"
-                rx="2"
+                width="24.0909"
+                height="4.1075"
+                rx="2.05375"
                 fill="currentColor"
             />
             <rect
-                y="6"
-                width="24"
-                height="4"
-                rx="2"
+                x="3.61365"
+                y="6.02273"
+                width="20.4773"
+                height="4.1075"
+                rx="2.05375"
                 fill="currentColor"
             />
             <rect
-                y="12"
-                width="24"
-                height="4"
-                rx="2"
+                x="7.22729"
+                y="12.0455"
+                width="16.8636"
+                height="4.1075"
+                rx="2.05375"
                 fill="currentColor"
             />
             <rect
-                y="18"
-                width="24"
-                height="4"
-                rx="2"
+                x="10.8409"
+                y="18.0682"
+                width="13.25"
+                height="4.1075"
+                rx="2.05375"
                 fill="currentColor"
             />
         </svg>
@@ -207,22 +209,22 @@ export default defineComponent({
     <template
         v-if="name === 'girdTypeMedium'">
         <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
+            width="25"
             height="22"
-            viewBox="0 0 24 22"
-            fill="none"
+            viewBox="0 0 25 22"
+            xmlns="http://www.w3.org/2000/svg"
         >
             <rect
-                width="24"
-                height="10"
+                width="24.0909"
+                height="10.2648"
                 rx="3"
                 fill="currentColor"
             />
             <rect
-                y="12"
-                width="24"
-                height="10"
+                x="10.8409"
+                y="11.7393"
+                width="13.25"
+                height="10.2607"
                 rx="3"
                 fill="currentColor"
             />
