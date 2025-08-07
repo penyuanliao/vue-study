@@ -148,7 +148,7 @@ export default defineComponent({
         const fontPC: FontStyleOptions = {
             fontSize: '19px',
             fontWeight: '500'
-        }
+        };
         const fontMobile: FontStyleOptions = {
             fontSize: '12px',
             fontWeight: '500'
@@ -160,7 +160,7 @@ export default defineComponent({
         const titleFontMobile: FontStyleOptions = {
             fontSize: '16px',
             fontWeight: '700'
-        }
+        };
         const createElement = (tagName: string, options: FontStyleOptions):HTMLElement => {
             const el = document.createElement(tagName);
             el.style.position = 'absolute';
@@ -347,13 +347,14 @@ export default defineComponent({
                                 target.style.maxWidth = `${target.offsetWidth + viewWidth + added - ((currSpan - 1) * 46)}px`;
                             } else {
                                 console.log('右邊物件-2', added, (touchManager.info.value.clientWidth) % 46);
-                                target.style.minWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46 + 17)}px`;
-                                target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46 + 17)}px`;
+                                target.style.minWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
+                                target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
                             }
                         } else if (isEnd) {
                             const { added } = touchManager.info.value; // 最後一頁是靠右
                             if (endLeftStart === offsetStart) {
-                                target.style.transform = `translateX(-${added}px)`;
+                                console.log('最後:左至右');
+                                target.style.transform = 'translateX(0)px)';
                                 target.style.minWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
                                 target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
                             } else {
@@ -411,7 +412,8 @@ export default defineComponent({
             const { cell } = touchManager.info.value;
             const len: number = (props.columnStart - 1) + props.span;
             const page: number = touchManager.page.value;
-
+            const maxPage: number = touchManager.maxPage.value;
+            if (cell * page === props.columnStart - 1 && page !== maxPage) return 'left'; // 開頭左至右
             if (len >= 32) return 'right';
             if (len < cell * (page + 1)) return 'left';
             return 'right';
@@ -459,9 +461,31 @@ export default defineComponent({
             if (window.innerWidth < 960 || isTouchDevice) return;
             window.open(props.link, '_blank');
         };
+        const openLinkMobileHandle = () => {
+            window.open(props.link, '_blank');
+        };
         const resize = () => {
             isMobile.value = window.innerWidth < 960;
             setupRange();
+        };
+        const contentStyle = () => {
+            if (!isMobile.value) {
+                return {
+                    width: `calc(100% - ${props.icon ? 8 : 14}px)`
+                };
+            }
+            let width: string = 'calc(100% - 6px)';
+            if (isHover.value) {
+                width = '100%';
+            } else if (!props.icon) {
+                let padding: number = 0;
+                if (!props.continuing) padding += 12;
+                if (!props.continued) padding += 12;
+                width = `calc(100% - ${padding}px)`;
+            }
+            return {
+                width
+            };
         };
         const sectionStyle = () => {
             if (!isMobile.value) return {};
@@ -473,7 +497,7 @@ export default defineComponent({
                 totalLength,
                 endedPage,
                 endedSpan,
-                endedBack,
+                startPage,
                 offsetStart,
                 offsetEnded,
                 currSpan
@@ -538,8 +562,13 @@ export default defineComponent({
 
             let width: string = 'calc(100% - 25px)';
             const endLeftStart: number = (32 - cell);
-            if (currSpan <= 3) {
-                width = `${currSpan * 46 - 10}px`;
+            if (currSpan <= 3 && !isHover.value) {
+                if (startPage === page && endedPage !== page) {
+                    // 還有下一頁直接超過
+                    width = '100%';
+                } else {
+                    width = `${currSpan * 46 - 10}px`;
+                }
             }
 
             return {
@@ -557,7 +586,7 @@ export default defineComponent({
             textWidth.value = measureTextWidth(value, props.eventDesc, font);
             eTitleWidth.value = measureTitleWidth(props.title, titleFont);
             await nextTick();
-            hasCramped.value = (eventDateRef.value?.offsetWidth || 0) < 15 && !isHover.value; // 確認寬度夠不夠
+            // hasCramped.value = (eventDateRef.value?.offsetWidth || 0) < 15 && !isHover.value && props.small; // 確認寬度夠不夠
             sectionRef.value?.classList.add('section-animate'); // 開啟轉場
         };
 
@@ -659,8 +688,10 @@ export default defineComponent({
             sectionRef,
             hasCramped,
             containerClass,
+            contentStyle,
             sectionStyle,
-            openLinkHandle
+            openLinkHandle,
+            openLinkMobileHandle
         };
     }
 });
@@ -680,71 +711,78 @@ export default defineComponent({
             }"
         />
         <div
-            ref="sectionRef"
-            class="event-title-section"
-            :style="sectionStyle()"
+            class="event-title-content"
+            :style="contentStyle()"
         >
             <div
-                v-if="icon"
-                class="event-icon"
-            >
-                <svg
-                    style="pointer-events: none;"
-                    width="14"
-                    height="19"
-                    viewBox="0 0 14 19"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        d="M0 7C0 5.13872 0 4.20808 0.244717 3.45492C0.739307 1.93273 1.93273 0.739307 3.45491 0.244717C4.20808 0 5.13872 0 7 0C8.86128 0 9.79192 0 10.5451 0.244717C12.0673 0.739307 13.2607 1.93273 13.7553 3.45492C14 4.20808 14 5.13872 14 7V14.3874C14 16.3045 14 17.2631 13.658 17.77C13.2403 18.3893 12.5122 18.7242 11.7701 18.6383C11.1627 18.568 10.4349 17.9442 8.97931 16.6965C8.33858 16.1474 8.01821 15.8728 7.66631 15.7484C7.23517 15.5961 6.76483 15.5961 6.33369 15.7484C5.98179 15.8728 5.66142 16.1474 5.02069 16.6965C3.5651 17.9442 2.8373 18.568 2.22986 18.6383C1.48778 18.7242 0.759708 18.3893 0.341955 17.77C0 17.2631 0 16.3045 0 14.3874V7Z"
-                        fill="white"
-                    />
-                </svg>
-            </div>
-            <div
-                v-if="tag"
-                class="event-title-tag"
-            >
-                <NSymbols
-                    name="award"
-                    width="24"
-                    height="24"
-                />
-            </div>
-            <div
-                class="event-title"
-                ref="titleRef"
-            >
-                <h1
-                    :class="{
-                        tag
-                    }"
-                >
-                    {{ title }}
-                </h1>
-            </div>
-            <div
-                class="event-content"
-                :class="{
-                    hidden: hasCramped
-                }"
+                ref="sectionRef"
+                class="event-title-section"
+                :style="sectionStyle()"
             >
                 <div
-                    class="event-date font-style"
-                    ref="eventDateRef"
+                    v-if="icon"
+                    class="event-icon"
                 >
-                    {{ eventDate }}
+                    <svg
+                        style="pointer-events: none;"
+                        width="14"
+                        height="19"
+                        viewBox="0 0 14 19"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            d="M0 7C0 5.13872 0 4.20808 0.244717 3.45492C0.739307 1.93273 1.93273 0.739307 3.45491 0.244717C4.20808 0 5.13872 0 7 0C8.86128 0 9.79192 0 10.5451 0.244717C12.0673 0.739307 13.2607 1.93273 13.7553 3.45492C14 4.20808 14 5.13872 14 7V14.3874C14 16.3045 14 17.2631 13.658 17.77C13.2403 18.3893 12.5122 18.7242 11.7701 18.6383C11.1627 18.568 10.4349 17.9442 8.97931 16.6965C8.33858 16.1474 8.01821 15.8728 7.66631 15.7484C7.23517 15.5961 6.76483 15.5961 6.33369 15.7484C5.98179 15.8728 5.66142 16.1474 5.02069 16.6965C3.5651 17.9442 2.8373 18.568 2.22986 18.6383C1.48778 18.7242 0.759708 18.3893 0.341955 17.77C0 17.2631 0 16.3045 0 14.3874V7Z"
+                            fill="white"
+                        />
+                    </svg>
                 </div>
                 <div
-                    class="event-desc font-style"
-                    v-html="eventDesc"
+                    v-if="tag"
+                    class="event-title-tag"
+                >
+                    <NSymbols
+                        name="award"
+                        width="24"
+                        height="24"
+                    />
+                </div>
+                <div
+                    class="event-title"
+                    ref="titleRef"
+                >
+                    <h1
+                        :class="{
+                            tag
+                        }"
+                    >
+                        {{ title }}
+                    </h1>
+                </div>
+                <div
+                    class="event-content"
+                    :class="{
+                        hidden: hasCramped
+                    }"
+                >
+                    <div
+                        class="event-date font-style"
+                        ref="eventDateRef"
+                    >
+                        {{ eventDate }}
+                    </div>
+                    <div
+                        class="event-desc font-style"
+                        v-html="eventDesc"
+                    />
+                </div>
+                <NDetailButton
+                    v-if="isMobile && isHover"
+                    class="detail-btn"
+                    :color="color"
+                    @pointerup="openLinkMobileHandle"
                 />
             </div>
-            <NDetailButton
-                v-if="isMobile && isHover"
-                class="detail-btn"
-            />
         </div>
     </div>
 </template>
@@ -756,10 +794,10 @@ export default defineComponent({
     height: 100%;
     min-width: 46px;
     min-height: 30px;
-    position: absolute;
+    position: relative;
     display: flex;
     flex-direction: column;
-    padding-left: 16px;
+    //padding-left: 16px;
     background: transparent;
     left: calc(1 / 2 * 100%);
     transform: translateX(calc(calc(1 / 2 * 100%) * -1));
@@ -769,7 +807,21 @@ export default defineComponent({
     &:focus {
         outline: none;
     }
-
+    .event-title-content {
+        width: calc(100% - 14px);
+        //width: 100%;
+        height: 100%;
+        min-width: 46px;
+        min-height: 30px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-left: 4px;
+        z-index: 1;
+    }
     .event-title-section {
         width: 100%;
         height: 100%;
@@ -781,10 +833,6 @@ export default defineComponent({
         position: absolute;
         left: 0;
         align-items: center;
-        &.section-animate {
-            transition: left 0.15s ease;
-            transition-delay: .3s;
-        }
     }
     &.icon {
         padding-left: 0;
@@ -829,7 +877,7 @@ export default defineComponent({
             padding-right: 20px;
         }
         .event-title-tag {
-            margin-left: 15px;
+            margin-left: 5px;
         }
     }
 
@@ -849,6 +897,9 @@ export default defineComponent({
     &.hover {
         min-width: 100%;
         height: 80px;
+        .event-title-section {
+            left: 10px;
+        }
         &.icon {
             .event-title {
                 visibility: visible;
@@ -1008,6 +1059,7 @@ export default defineComponent({
     flex-shrink: 0;
     visibility: hidden;
     margin-right: 10px;
+    pointer-events: auto;
 }
 .point-left {
     left: 0;
@@ -1032,10 +1084,12 @@ export default defineComponent({
             .event-date {
                 font-size: 12px;
                 margin-bottom: 0;
+                line-height: 16px;
             }
             .event-desc {
                 font-size: 12px;
                 margin-top: 0;
+                line-height: 16px;
             }
         }
         .event-title-tag {
@@ -1051,6 +1105,7 @@ export default defineComponent({
         &.hover {
             overflow: visible;
             padding-left: 0;
+            height: 60px;
             .event-title {
                 h1 {
                     max-width: calc(46px * 2);

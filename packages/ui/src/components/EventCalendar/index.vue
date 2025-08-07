@@ -96,7 +96,9 @@ export default defineComponent({
 
             } else {
                 events.value = current.value?.events.filter(({ title, eventDesc }: IEvents) => {
-                    return title.includes(value) || eventDesc.includes(value);
+
+                    return title.includes(value.toLowerCase()) || eventDesc.includes(value.toLowerCase()) ||
+                        title.includes(value.toUpperCase()) || eventDesc.includes(value.toUpperCase());
                 });
             }
         };
@@ -238,10 +240,6 @@ export default defineComponent({
                 />
                 <!-- Mobile -->
                 <div class="grid-type-group-mobile">
-<!--                    <GridType-->
-<!--                        v-model:selected="gridType"-->
-<!--                        @change="gridTypeChange"-->
-<!--                    />-->
                     <div
                         class="gt-btn"
                         @pointerup="gridTypeChange(gridType === 'small' ? 'medium' : 'small')"
@@ -286,9 +284,10 @@ export default defineComponent({
 @use 'theme';
 
 .event-calendar-container {
-    min-height: 100vh;
     min-width: 0;
-    max-width: 1920px;
+    min-height: 0;
+    //min-height: 100vh;
+    //max-width: 1920px;
     height: 100%;
     width: 100%;
     background: white;

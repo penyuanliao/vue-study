@@ -130,11 +130,11 @@ export default defineComponent({
             </div>
         </div>
         <div
-            class="sidebar-left-shadow"
+            class="sidebar-left-shadow hidden"
             ref="leftRef"
         />
         <div
-            class="sidebar-right-shadow"
+            class="sidebar-right-shadow hidden"
             ref="rightRef"
         />
     </aside>

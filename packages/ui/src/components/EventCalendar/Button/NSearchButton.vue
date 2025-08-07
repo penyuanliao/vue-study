@@ -62,7 +62,7 @@ export default defineComponent({
             const container = searchContainer.value;
             if (container) {
                 if (window.innerWidth < 960) {
-                    container.style.setProperty('--search-button-width', `${window.innerWidth}px`);
+                    container.style.setProperty('--search-button-width', `${window.innerWidth - 40}px`);
                     container.style.setProperty('--search-button-height', `${40}px`);
                 } else {
                     container.style.setProperty('--search-button-width', `${props.width}px`);
@@ -140,6 +140,7 @@ export default defineComponent({
 
 .search-button-container {
     width: var(--search-button-width, 265px);
+    min-width: var(--search-button-width, 265px);
     height: var(--search-button-height, 65px);
     position: relative;
     display: flex;

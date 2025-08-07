@@ -117,7 +117,7 @@ export default defineComponent({
         border-top: 1px transparent solid;
         &:hover {
             //border-top: 1px solid #F15624;
-            color: #444746;
+            color: #9F9F9F;
         }
         &:active,
         &.active {
@@ -167,8 +167,8 @@ export default defineComponent({
     .tool-bar-container {
         min-width: 230px;
         height: 65px;
-        gap: 10px;
-        padding-right: 30px;
+        gap: 18px;
+        padding-right: 70px;
 
         .calendar-th {
             width: 47px;

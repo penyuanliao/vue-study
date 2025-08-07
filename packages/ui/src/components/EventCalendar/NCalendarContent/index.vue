@@ -374,6 +374,18 @@ export default defineComponent({
     }
 }
 @media (max-width: 959px) {
+    .calendar-wrap {
+        .grid-content {
 
+            grid-template-rows: repeat(10, 70px);
+
+            .item {
+                height: 60px;
+            }
+            .item-small {
+                height: 30px;
+            }
+        }
+    }
 }
 </style>

@@ -38,7 +38,7 @@ export default defineComponent({
         onMounted(() => {
             if (searchInput.value) {
                 searchInput.value.addEventListener('keyup', onKeyupHandle);
-                searchInput.value.focus();
+                setTimeout(() => searchInput.value.focus(), 500);
             }
         });
         onUnmounted(() => {
@@ -80,6 +80,7 @@ export default defineComponent({
             @focusout="onInputFocusoutHandle"
             ref="searchInput"
             tabindex="1"
+            @pointerup="onInputFocusoutHandle"
         />
     </div>
 </template>
@@ -96,6 +97,8 @@ export default defineComponent({
     justify-content: left;
     text-align: center;
     margin-left: 20px;
+    pointer-events: auto;
+
     .font {
         font-size: 19px;
         font-weight: 700;

@@ -53,12 +53,12 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
     const recentlyUpdatedEndTime: number = 7 * 60 * 60 * 24 * 1000;
     const rowsMap = new Map();
     // 檢查活動是否開始
-    const isContinued = (time: Date) => (time.getMonth() !== activeDate.getMonth());
+    const isContinued = (time: Date) => (time?.getMonth() !== activeDate?.getMonth());
     // 檢查活動是否該月結束
     const isContinuing = (time: Date, daysInMonth: number) => {
-        const lastDay = time.getDate() > (31 - daysInMonth); // 超過該月份最後N天
+        const lastDay = time?.getDate() > (31 - daysInMonth); // 超過該月份最後N天
         if (time.getFullYear() > activeDate.getFullYear() && lastDay) return true;
-        return (time.getMonth() !== activeDate.getMonth() && lastDay);
+        return (time?.getMonth() !== activeDate?.getMonth() && lastDay);
     };
     // 每個area位置的fragment
     const setFragment = (rows: Map<number, IGridArea>, key: number, fragment: number, span: number) => {
@@ -81,7 +81,7 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
         const keys: number[] = [...rows.keys()];
         for (let j = 0; j < keys.length; j += 1) {
             const key = keys[j];
-            const { columnStart, span,  } = rows.get(key) || { columnStart: 0, span: 0 };
+            const { columnStart, span } = rows.get(key) || { columnStart: 0, span: 0 };
             fragments = rows.get(key)?.fragments || [];
             if (eventColumnStart > (columnStart - 1) + span) {
                 fragment = eventColumnStart - (columnStart + span);
