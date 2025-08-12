@@ -527,12 +527,12 @@
         "sort": 65,
         "link_text": "点击观看",
         "tooltip_title": "独乐乐不如粽乐乐",
-        "company_name": "JDB电子",
+        "company_name": "JbB电子",
         "partner": {
           "id": 89,
           "lang": 2,
           "hall": "电子游艺",
-          "title": "JDB电子",
+          "title": "JbB电子",
           "color_code": "#ff7517",
           "img_160x100": {
             "id": 52419,
@@ -899,7 +899,7 @@
         "sort": 80,
         "link_text": "点击观看",
         "tooltip_title": "欢钓锦标赛 (第一阶段锦标赛)",
-        "company_name": "TS电子"
+        "company_name": "TS电子 X TGS电子 X 999电子"
       }
     ]
   }

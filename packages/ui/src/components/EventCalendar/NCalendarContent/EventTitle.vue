@@ -166,6 +166,7 @@ export default defineComponent({
             el.style.position = 'absolute';
             el.style.visibility = 'hidden';
             el.style.whiteSpace = 'nowrap';
+            el.style.textOverflow = '';
             el.style.fontSize = options.fontSize;
             el.style.fontWeight = options.fontWeight;
             el.style.fontFamily = options.fontFamily || fontFamily;
@@ -760,7 +761,7 @@ export default defineComponent({
     left: calc(1 / 2 * 100%);
     transform: translateX(calc(calc(1 / 2 * 100%) * -1));
     transition: min-width 0.3s ease, height 0.3s ease;
-    //cursor: pointer;
+    cursor: pointer;
     pointer-events: visible;
     &:focus {
         outline: none;
@@ -977,7 +978,7 @@ export default defineComponent({
         overflow:hidden;
         white-space: normal;
         padding-left: 20px;
-        max-width: 160px;
+        //max-width: 160px;
         &.small {
             font-size: 19px;
             white-space: nowrap;
@@ -1012,10 +1013,8 @@ export default defineComponent({
     &.hidden {
         visibility: hidden;
     }
-    .event-date,
-    .event-desc {
+    .event-date {
         text-overflow: ellipsis;
-        overflow:hidden;
     }
 }
 .detail-btn {
@@ -1054,11 +1053,15 @@ export default defineComponent({
                 font-size: 12px;
                 margin-bottom: 0;
                 line-height: 16px;
+                text-overflow: ellipsis;
+                overflow:hidden;
             }
             .event-desc {
                 font-size: 12px;
                 margin-top: 0;
                 line-height: 16px;
+                text-overflow: ellipsis;
+                overflow:hidden;
             }
         }
         .event-title-tag {

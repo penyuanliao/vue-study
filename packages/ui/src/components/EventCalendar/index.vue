@@ -97,9 +97,7 @@ export default defineComponent({
 
             } else {
                 events.value = current.value?.events.filter(({ title, eventDesc }: IEvents) => {
-
-                    return title.includes(value.toLowerCase()) || eventDesc.includes(value.toLowerCase()) ||
-                        title.includes(value.toUpperCase()) || eventDesc.includes(value.toUpperCase());
+                    return title.toLowerCase().includes(value.toLowerCase()) || eventDesc.toLowerCase().includes(value.toLowerCase());
                 });
             }
         };
