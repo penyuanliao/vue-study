@@ -66,7 +66,7 @@ export default defineComponent({
             const newDataState = { ...this.data, checked: isChecked };
             this.$emit('update:data', newDataState);
 
-            this.$emit('change', { checked: isChecked, id: this.id });
+            this.$emit('change', { checked: isChecked, id: this.id, name: this.data.name });
             console.log(`Emitted data.checked: ${isChecked}`);
         }
     }

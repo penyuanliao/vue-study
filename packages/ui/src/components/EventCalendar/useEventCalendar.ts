@@ -48,6 +48,28 @@ export const popupTipsManager = (() => {
         setStatus
     };
 })();
+// 暫存Tag開關狀態
+export const cacheCalendarTagManager = (() => {
+    const map: Map<string, boolean> = new Map<string, boolean>();
+    const get = (key: string) => map.get(key);
+    const insert = (key: string, value: boolean): boolean => {
+        if (!map.has(key)) {
+            map.set(key, value);
+        }
+        return <boolean>map.get(key);
+    };
+    const update = (key: string, value: boolean): boolean => {
+        if (map.has(key)) {
+            map.set(key, value);
+        }
+        return <boolean>map.get(key);
+    };
+    return {
+        get,
+        insert,
+        update
+    };
+})();
 // 行事曆資料
 const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = false) => {
     const recentlyUpdatedEndTime: number = 7 * 60 * 60 * 24 * 1000;
@@ -200,7 +222,7 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
             const calendar: ICalendars = {
                 name: title,
                 color: color_code,
-                checked: true,
+                checked: cacheCalendarTagManager.insert(title, true),
                 isUpdate: false,
                 sort
             };

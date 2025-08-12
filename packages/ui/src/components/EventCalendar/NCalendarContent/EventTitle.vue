@@ -110,6 +110,7 @@ export default defineComponent({
         const titleRef = ref<HTMLElement | null>(null);
         const sectionRef = ref<HTMLElement | null>(null);
         const eventDateRef = ref<HTMLElement | null>(null);
+        const eventContentRef = ref<HTMLElement | null>(null);
         const isHover = ref<boolean>(false);
         const textWidth = ref<number>(0);
         const eTimeWidth = ref<number>(0);
@@ -134,7 +135,6 @@ export default defineComponent({
             endedBack: 0,
             currSpan: 0
         };
-        const hasCramped = ref<boolean>(false);
         // 每個位置寬度
         const layouts = {
             marginLeft: 10,
@@ -304,9 +304,9 @@ export default defineComponent({
                     const full: number = sizeWidth * (cell - currSpan);
                     // 該頁物件是否在範圍內
                     if (currSpan !== 0) {
+                        const endLeftStart: number = 32 - cell;
                         const isEnd: boolean = touchManager.maxPage.value === page;
                         const isStart: boolean = page === 0;
-                        const endLeftStart: number = 32 - cell;
                         const backCell: number = isEnd ? touchManager.info.value.backCell : 0;
                         const backWidth: number = touchManager.info.value.backWidth % 46;
                         let offset: number = (offsetStart % cell) - backCell;
@@ -314,7 +314,7 @@ export default defineComponent({
                             offset = cell;
                         }
                         setupRange();
-                        console.log(`onMouseEnterHandle ${props.title} x: ${touchManager.info.value.x} ${touchManager.info.value.added}
+                        console.log(`[${isEnd}]onMouseEnterHandle ${props.title} x: ${touchManager.info.value.x} ${touchManager.info.value.added}
                         start: ${start} columnStart: ${props.columnStart} totalLength: ${totalLength} endLeftStart: ${endLeftStart}
                         startPage: ${startPage} startSpan: ${startSpan}
                         endedPage: ${endedPage} endedSpan: ${endedSpan} maxPage: ${touchManager.maxPage.value}
@@ -326,7 +326,7 @@ export default defineComponent({
                         `);
 
                         const viewWidth: number = touchManager.info.value.width;
-                        if (currSpan === cell && endedPage !== page) {
+                        if ((currSpan === cell && endedPage !== page) || (currSpan === cell && props.continuing)) {
                             // 一整條的不動作
                             console.log('一整條的不動作');
                         } else if (offset === 0 && (!isEnd || props.columnStart <= (32 - cell))) {
@@ -338,11 +338,11 @@ export default defineComponent({
                             target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
                         } else if ((!isEnd && offsetEnded % cell === 0 && startPage !== endedPage)
                             || (offsetEnded === 32)
-                            || (offsetEnded % cell === 0)) {
+                            || (offsetEnded % cell === 0 && !isEnd)) {
                             const added: number = (isEnd) ? touchManager.info.value.added : 0; // 最後一頁是靠右
                             if (page !== startPage && offsetEnded !== 32) {
                                 // 第一頁超出頁面可以點到
-                                console.log('右邊物件-1');
+                                console.log('右邊物件-1', !isEnd && offsetEnded % cell === 0 && startPage !== endedPage);
                                 target.style.minWidth = `${target.offsetWidth + viewWidth + added - ((currSpan - 1) * 46)}px`;
                                 target.style.maxWidth = `${target.offsetWidth + viewWidth + added - ((currSpan - 1) * 46)}px`;
                             } else {
@@ -353,10 +353,11 @@ export default defineComponent({
                         } else if (isEnd) {
                             const { added } = touchManager.info.value; // 最後一頁是靠右
                             if (endLeftStart === offsetStart) {
-                                console.log('最後:左至右');
-                                target.style.transform = 'translateX(0)px)';
-                                target.style.minWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
-                                target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
+                                console.log('最後:左至右', added);
+                                const move: number = (props.columnStart < endLeftStart ? 0 : added);
+                                target.style.transform = `translateX(-${move}px)`;
+                                target.style.minWidth = `${target.offsetWidth + ((cell - currSpan) * 46) + move}px`;
+                                target.style.maxWidth = `${target.offsetWidth + ((cell - currSpan) * 46) + move}px`;
                             } else {
                                 const extra: number = offsetStart - endLeftStart;
                                 target.style.transform = `translateX(-${extra * 46 + added}px)`;
@@ -474,17 +475,8 @@ export default defineComponent({
                     width: `calc(100% - ${props.icon ? 8 : 14}px)`
                 };
             }
-            let width: string = 'calc(100% - 6px)';
-            if (isHover.value) {
-                width = '100%';
-            } else if (!props.icon) {
-                let padding: number = 0;
-                if (!props.continuing) padding += 12;
-                if (!props.continued) padding += 12;
-                width = `calc(100% - ${padding}px)`;
-            }
             return {
-                width
+                width: '100%'
             };
         };
         const sectionStyle = () => {
@@ -497,15 +489,21 @@ export default defineComponent({
                 totalLength,
                 endedPage,
                 endedSpan,
-                startPage,
                 offsetStart,
                 offsetEnded,
-                currSpan
             } = range;
-
+            let paddingLeft: number = 0;
+            if (!isHover.value) {
+                // 沒有hover狀態
+                if (!props.continued) {
+                    paddingLeft = 25;
+                } else {
+                    paddingLeft = 5;
+                }
+            }
             let visibility: string = 'visible';
-            let left: number = 20; // 起始位置
-            let indentWidth: number = Math.max((sizeWidth * (offsetStart - start)), 0);
+            let left: number = 10; // 起始位置
+            let indentWidth: number = Math.max((sizeWidth * (offsetStart - start) - paddingLeft), 0);
 
             if (props.icon && !isHover.value) {
                 return { visibility };
@@ -515,32 +513,24 @@ export default defineComponent({
             // 最後一頁
             if (finalPage) {
                 if (props.columnStart <= offsetStart) {
-                    // 上一頁就開始的
-                    indentWidth -= touchManager.info.value.added;
-                } else {
-                    // indentWidth -= endedBack % 46;
+                    if ((32 - cell) === props.columnStart) { /* empty */ } else {
+                        // 上一頁就開始的
+                        indentWidth -= (touchManager.info.value.added - 5);
+                    }
                 }
             }
-
-            // 調整tag間距
-            if (props.tag && !props.icon) indentWidth -= 5;
 
             // 檢查是否從這頁開始
             const between: boolean = start >= offsetStart && start <= offsetEnded;
             if (isHover.value) {
-                // left = 0;
                 if (props.icon) {
                     left = 0;
                 } else if (props.continued || !between) {
                     left = 10;
                 }
             } else {
-                if (props.icon) {
-                    left = 0;
-                } else if (props.continued || !between) {
-                    left = 10;
-                }
                 // 開頭只有1span隱藏
+                // eslint-disable-next-line no-lonely-if
                 if (!isHover.value && endedSpan === 1 && endedPage === page) {
                     visibility = 'hidden';
                 }
@@ -551,31 +541,18 @@ export default defineComponent({
                 // 隱藏內文
                 visibility = isHover.value ? 'visible' : 'hidden';
             }
-            // console.log(`sectionStyle ${props.title} left: ${left} indentWidth: ${indentWidth}
-            //     columnStart: ${props.columnStart} x: ${touchManager.info.value.x} getPositionX: ${touchManager.getPositionX()}
-            //     start: ${start} totalLength: ${totalLength} cell: ${touchManager.info.value.cell}
-            //     startPage: ${startPage} startSpan: ${startSpan}
-            //     endedPage: ${endedPage} endedSpan: ${endedSpan} endedBack: ${endedBack}
-            //     backWidth: ${touchManager.info.value.cell - Math.floor(endedBack / 46)} ${endedBack % 46}
-            //     offsetStart: ${offsetStart} offsetEnded: ${offsetEnded} between:${between}
-            //     `);
-
-            let width: string = 'calc(100% - 25px)';
-            const endLeftStart: number = (32 - cell);
-            if (currSpan <= 3 && !isHover.value) {
-                if (startPage === page && endedPage !== page) {
-                    // 還有下一頁直接超過
-                    width = '100%';
-                } else {
-                    width = `${currSpan * 46 - 10}px`;
+            setTimeout(() => {
+                if (!isHover.value && (eventContentRef.value?.offsetWidth || 0) <= 20) {
+                    eventContentRef.value?.classList.add('visible-hidden');
+                } else if (!isHover.value) {
+                    eventContentRef.value?.classList.remove('visible-hidden');
                 }
-            }
-
+            }, 300);
+            const offsetX: number = Math.max(left + indentWidth, 0);
             return {
                 visibility,
-                maxWidth: `${touchManager.info.value.width + touchManager.info.value.added - 25}px`,
-                left: `${Math.max(left + indentWidth, 0)}px`,
-                width
+                left: `${offsetX}px`,
+                width: `calc(100% - ${offsetX + 10}px)`
             };
         };
         const measureWordWidth = async (value: string) => {
@@ -586,7 +563,6 @@ export default defineComponent({
             textWidth.value = measureTextWidth(value, props.eventDesc, font);
             eTitleWidth.value = measureTitleWidth(props.title, titleFont);
             await nextTick();
-            // hasCramped.value = (eventDateRef.value?.offsetWidth || 0) < 15 && !isHover.value && props.small; // 確認寬度夠不夠
             sectionRef.value?.classList.add('section-animate'); // 開啟轉場
         };
 
@@ -610,24 +586,9 @@ export default defineComponent({
             if (!isMobile.value) return;
             setupRange();
             const {
-                start,
-                startPage,
-                startSpan,
-                endedPage,
-                endedSpan,
                 currSpan
             } = range;
-            const cellsWidth: number = currSpan * 46;
-/*
-            console.log(`event-title ${props.title} isMobile: ${isMobile.value}
-            startPage: ${startPage} startSpan: ${startSpan}
-            endedPage: ${endedPage} endedSpan: ${endedSpan} |currSpan: ${currSpan}|
-            page: ${value}(${touchManager.info.value.cell}) cell: ${touchManager.info.value.cell} max: ${touchManager.maxPage.value}
-            width: ${touchManager.maxWidth.value} (${start + props.span})
-            cellsWidth: ${cellsWidth} : ${textWidth.value} : ${eTimeWidth.value}
-            Return: ${cellsWidth < eTimeWidth.value}
-            titleRef: ${titleRef.value?.offsetWidth}
-            `);*/
+            const cellsWidth: number = (currSpan < 0 ? props.span : currSpan) * 46;
             const target: HTMLElement | null = container.value;
             if (target) {
                 target.style.minWidth = '100%';
@@ -636,10 +597,10 @@ export default defineComponent({
             }
 
             // 這邊檢查寬度夠不夠, 如果不夠隱藏
-            if (cellsWidth < eTimeWidth.value + eTitleWidth.value) {
-                eventDateRef.value?.classList.add('visible-hidden');
+            if (cellsWidth - (eTitleWidth.value + 55 + (props.tag ? layouts.tag + 10 : 0)) < 16) {
+                eventContentRef.value?.classList.add('visible-hidden');
             } else {
-                eventDateRef.value?.classList.remove('visible-hidden');
+                eventContentRef.value?.classList.remove('visible-hidden');
             }
         });
         onMounted(() => {
@@ -685,8 +646,8 @@ export default defineComponent({
             container,
             titleRef,
             eventDateRef,
+            eventContentRef,
             sectionRef,
-            hasCramped,
             containerClass,
             contentStyle,
             sectionStyle,
@@ -712,7 +673,6 @@ export default defineComponent({
         />
         <div
             class="event-title-content"
-            :style="contentStyle()"
         >
             <div
                 ref="sectionRef"
@@ -761,9 +721,7 @@ export default defineComponent({
                 </div>
                 <div
                     class="event-content"
-                    :class="{
-                        hidden: hasCramped
-                    }"
+                    ref="eventContentRef"
                 >
                     <div
                         class="event-date font-style"
@@ -808,18 +766,19 @@ export default defineComponent({
         outline: none;
     }
     .event-title-content {
-        width: calc(100% - 14px);
-        //width: 100%;
         height: 100%;
         min-width: 46px;
         min-height: 30px;
         overflow: hidden;
-        position: relative;
+        position: absolute;
+        top: 0;
+        left: 20px;
+        right: 20px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        margin-left: 4px;
+        //margin-left: 4px;
         z-index: 1;
     }
     .event-title-section {
@@ -873,6 +832,9 @@ export default defineComponent({
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
         }
+        .event-title-content {
+            left: 0;
+        }
         .event-icon {
             padding-right: 20px;
         }
@@ -884,6 +846,9 @@ export default defineComponent({
     &.continuing {
         left: calc(100%);
         transform: translateX(calc(100% * -1));
+        .event-title-content {
+            right: 1px;
+        }
         .event-title-bg {
             right: 1px;
             border-top-right-radius: 0;
@@ -893,13 +858,9 @@ export default defineComponent({
             padding-left: 10px;
         }
     }
-
     &.hover {
         min-width: 100%;
         height: 80px;
-        .event-title-section {
-            left: 10px;
-        }
         &.icon {
             .event-title {
                 visibility: visible;
@@ -956,15 +917,19 @@ export default defineComponent({
             }
         }
     }
-
+    &.continued.hover {
+        .event-title-section {
+            left: 10px;
+        }
+    }
 }
 .event-title-bg {
     height: 100%;
     min-width: 0;
     position: absolute;
     top: 0;
-    left: 10px;
-    right: 10px;
+    left: 20px;
+    right: 20px;
     border-radius: 20px;
     transition: box-shadow 0.6s ease;
     box-shadow: 0 2px 10px 0 rgba(159, 159, 159, 0);
@@ -1078,6 +1043,10 @@ export default defineComponent({
         overflow: hidden;
         .event-title-section {
             pointer-events: none;
+            &.section-animate {
+                transition: left 0.15s ease;
+                transition-delay: .3s;
+            }
         }
         .event-content {
             //min-width: calc(46px * 2);
@@ -1113,6 +1082,10 @@ export default defineComponent({
                     padding-left: 0;
                 }
             }
+            .event-title-content {
+                left: 0;
+                right: 0;
+            }
             .event-content {
                 .event-date {
 
@@ -1128,6 +1101,11 @@ export default defineComponent({
             .detail-btn {
                 visibility: visible;
                 animation: opacity 0.4s ease;
+            }
+            .event-title-section {
+                &.section-animate {
+                    transition: none;
+                }
             }
         }
         &.continued {

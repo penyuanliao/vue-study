@@ -39,6 +39,7 @@ export default defineComponent({
         const calendars = ref<ICalendars[]>([]);
         const events = ref<IEvents[]>([]);
         const gridType = ref<'medium' | 'small'>('small');
+        const locale = ref<string>('zh-TW');
         const fourMonthlyPeriod = ref<{ key: string, isUpdate: boolean }[]>([
             {
                 key: '2024/5/1',
@@ -61,9 +62,9 @@ export default defineComponent({
         const showSidebar = ref<boolean>(false);
         const showToolbar = ref<boolean>(true);
         const isDeflate = ref<boolean>(true);
+        const todayBtnDisabled = ref<boolean>(true);
         const contentRef = ref<HTMLElement|null>(null);
         const touchManager = useNTouchMove();
-        const weeks: string[] = ['日', '一', '二', '三', '四', '五', '六'];
 
         const setData = (month: string) => {
             if (+month === 5) {
@@ -150,7 +151,6 @@ export default defineComponent({
         onMounted(() => {
 
             touchManager.setup(contentRef.value);
-
             fourMonthlyPeriod.value.forEach((item, index) => {
                 const [ year, month ] = item.key.split("/");
                 const act: Date = new Date(item.key);
@@ -163,12 +163,16 @@ export default defineComponent({
                     events.value = eventCalendar.events;
                     activeDate.value = act;
                     current.value = eventCalendar;
+                    console.log('calendars:', calendars.value);
                     console.log('events:', events.value);
                     console.log('monthIsUpdate:', eventCalendar.monthIsUpdate);
                     touchManager.clear();
+                    todayBtnDisabled.value = false;
                 }
             });
             popupTips.value = !popupTipsManager.getStatus('event-calendar-popup-tips');
+            console.log('todayBtnDisabled:', todayBtnDisabled.value);
+
         });
         return {
             contentRef,
@@ -176,12 +180,12 @@ export default defineComponent({
             events,
             calendars,
             now,
-            weeks,
             isCurrentMonth,
             activeDate,
             fourMonthlyPeriod,
             showSidebar,
             showToolbar,
+            todayBtnDisabled,
             popupTipsManager,
             handle,
             gridTypeChange,
@@ -189,7 +193,8 @@ export default defineComponent({
             onSearchOpenHandle,
             onClickThisMonthHandle,
             onClickCalendarThHandle,
-            gridType
+            gridType,
+            locale
         };
     }
 });
@@ -202,10 +207,17 @@ export default defineComponent({
             <div class="n-title">
                 <NToggleButton
                     class="today-btn"
+                    :class="{
+                        disabled: todayBtnDisabled
+                    }"
                     :once="true"
                     v-model:selected="isCurrentMonth"
                     @selected="(value:boolean) => onClickThisMonthHandle(value)"
-                    :title="`${now.getMonth() + 1}月 ${now.getDate()}日 (星期${weeks[now.getDay()]})`"
+                    :title="`${now.toLocaleDateString(locale, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric'
+                    })})`"
                 >
                     {{ '今天' }}
                 </NToggleButton>
@@ -377,6 +389,12 @@ export default defineComponent({
         border-bottom-left-radius: 24px;
         border-bottom-right-radius: 24px;
         scroll-snap-type: x mandatory;
+    }
+    .disabled {
+        pointer-events: none;
+        background: #F1F1F1;
+        color: white;
+        border-color: #F1F1F1;
     }
 }
 

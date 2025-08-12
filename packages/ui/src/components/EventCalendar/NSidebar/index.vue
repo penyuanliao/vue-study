@@ -1,7 +1,7 @@
 <script lang="ts">
 import { defineComponent, PropType, ref, onMounted, watch, nextTick } from 'vue';
 import SwitchButton from '../Button/SwitchButton.vue';
-import { ICalendars } from '../useEventCalendar';
+import { cacheCalendarTagManager, ICalendars } from '../useEventCalendar';
 import NSymbols from '../Button/NSymbols.vue';
 
 export default defineComponent({
@@ -22,10 +22,11 @@ export default defineComponent({
         const leftRef = ref<HTMLDivElement>();
         const rightRef = ref<HTMLDivElement>();
 
-        const handle = (value: { checked: boolean, id: string }, index: number) => {
+        const handle = (value: { checked: boolean, id: string, name: string }, index: number) => {
             const updated = [...props.calendars];
             updated[index].checked = value.checked;
             emit('update:calendars', updated);
+            cacheCalendarTagManager.update(value.name, value.checked);
         };
         const scrollPosition = () => {
             const scheduleMobileEl = scheduleMobile.value;
@@ -113,7 +114,8 @@ export default defineComponent({
                 }"
                 @pointerup="() => handle({
                     checked: !item.checked,
-                    id: `tag-${ i }`
+                    id: `tag-${ i }`,
+                    name: item.name
                 }, i)"
             >
                 <div class="icon">
