@@ -145,7 +145,7 @@ export default defineComponent({
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: right;
+    justify-content: flex-end;
     flex-shrink: 0;
 }
 .calendar-search-button {
