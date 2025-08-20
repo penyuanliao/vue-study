@@ -104,8 +104,8 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
         for (let j = 0; j < keys.length; j += 1) {
             const key = keys[j];
             const { columnStart, span } = rows.get(key) || { columnStart: 0, span: 0 };
-            fragments = rows.get(key)?.fragments || [];
             if (eventColumnStart > (columnStart - 1) + span) {
+                fragments = rows.get(key)?.fragments || [];
                 fragment = eventColumnStart - (columnStart + span);
                 if (fragment > 1) {
                     fragments = setFragment(rows, key, columnStart + span, eventColumnStart - (columnStart + span));
@@ -119,7 +119,9 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
                 if (event && event.area) event.area.rowStart = key;
                 return;
             }
-            if (fragments.length > 0) {
+            // 找尋區塊
+            if ((rows.get(key)?.fragments || []).length > 0) {
+                fragments = rows.get(key)?.fragments || [];
                 for (let i = 0; i < fragments.length; i += 1) {
                     const seed: { columnStart: number, span: number } = fragments[i];
 
@@ -148,6 +150,8 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
                 1,
                 eventColumnStart - 1
             );
+        } else {
+            fragments = [];
         }
         rows.set(currentRow + 1, {
             columnStart: eventColumnStart,
@@ -174,7 +178,8 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
             if (offset === 1) {
                 space = Math.max(32, daysInMonth + 1 + ended.getMonth());
             } else {
-                space = daysInMonth - (start.getDate() - 1) + 1 + (31 - daysInMonth);
+                const endCol: boolean = ended.getFullYear() === activeDate.getFullYear() && (ended.getMonth() + 1 === activeDate.getMonth() + 2);
+                space = daysInMonth - (start.getDate() - 1) + 1 + (endCol ? Math.min((31 - daysInMonth), ended.getDate()) : (31 - daysInMonth));
             }
         } else {
             const startDay: number = start.getMonth() !== activeDate.getMonth() ? 0 : start.getDate() - 1;
@@ -191,7 +196,6 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
             const startTime: string = start_at.substring(0, 10).replace(/-/g, '/');
             const endedTime: string = end_at.substring(0, 10).replace(/-/g, '/');
             const row: number = startIndex + events.length + 1;
-
             const event: IEvents = {
                 id,
                 title: company_name,
@@ -205,9 +209,18 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
                 coTag: link_text === 'tags',
                 link
             };
-            if (isUpdate) monthIsUpdate = true;
-            if (isDeflate) deflateRow(event);
-            if (new Date(start_at).getFullYear() === activeDate.getFullYear()) events.push(event);
+            const eventStart: Date = new Date(start_at.replace(/-/g, '/'));
+            const eventEnd: Date = new Date(end_at.replace(/-/g, '/'));
+            const isValid: boolean = (eventStart.getFullYear() <= activeDate.getFullYear()
+                && eventEnd.getFullYear() >= activeDate.getFullYear()
+                && !(eventEnd.getFullYear() === activeDate.getFullYear() && eventEnd.getMonth() < activeDate.getMonth())
+                && !(eventStart.getFullYear() === activeDate.getFullYear() && eventStart.getMonth() > activeDate.getMonth())
+            );
+            if (isValid) {
+                if (isUpdate) monthIsUpdate = true;
+                if (isDeflate) deflateRow(event);
+                events.push(event);
+            }
         });
         return { events, monthIsUpdate };
     };

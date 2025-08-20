@@ -159,6 +159,7 @@ export default defineComponent({
     z-index: 10;
     border-radius: 999px;
     pointer-events: auto;
+    margin: 0 0;
     .search-icon {
         width: 24px;
         height: 24px;

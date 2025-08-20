@@ -42,11 +42,13 @@ export default defineComponent({
             const time = new Date(startTime);
             return (time.getMonth() !== activeDate.value.getMonth());
         };
+        // 活動該月結束
         const isContinuing = (endedTime: string) => {
             const time = new Date(endedTime);
-            const lastDay = time.getDate() > (31 - daysInMonth.value); // 超過該月份最後N天
-            if (time.getFullYear() > activeDate.value.getFullYear() && lastDay) return true;
-            return (time.getMonth() !== activeDate.value.getMonth() && lastDay);
+            const nextMonth: boolean = time.getMonth() + 1 === activeDate.value.getMonth() + 2;
+            const lastDay: boolean = nextMonth ? time.getDate() > (31 - daysInMonth.value) : true; // 超過該月份最後N天
+            if (time.getFullYear() > activeDate.value.getFullYear()) return true;
+            return (time.getMonth() > activeDate.value.getMonth() && lastDay);
         };
         const gridColumn = (startTime: string, endedTime: string, index: number): string => {
             const start = new Date(startTime);
@@ -141,7 +143,7 @@ export default defineComponent({
                 }">
                 <template
                     v-for="(event) in events"
-                    :key="event.id"
+                    :key="`nc-${event.id}`"
                 >
                     <div
                         class="item"
@@ -170,9 +172,10 @@ export default defineComponent({
                             :tag="event.coTag"
                             :link="event.link"
                             :color="event.color"
-                            :icon="event.area.span <= 2"
+                            :icon="event.area.span <= (2 + (event.coTag ? 1 : 0))"
                             :continued="isContinued(event.startTime)"
                             :continuing="isContinuing(event.endedTime)"
+                            :updated="event.isUpdate"
                         />
                     </div>
                 </template>
@@ -307,7 +310,7 @@ export default defineComponent({
             transition: all 0.3s;
             display: block;
             &.hidden {
-                display: none;
+                opacity: 0;
             }
             &:hover {
                 z-index: 30;
@@ -323,55 +326,7 @@ export default defineComponent({
         left: calc(1 / 2 * 100%);
         transform: translateX(calc(calc(1 / 2 * 100%) * -1)) translateY(calc(calc(1 / 2 * 100%) * -1));
     }
-    .updated:after {
-        content: '';
-        width: 20px;
-        height: 20px;
-        position: absolute;
-        background: #FF0000;
-        border: white 2px solid;
-        border-radius: 50%;
-        z-index: 30;
-        box-sizing: border-box;
-        top: -6px;
-        left: 0;
-        box-shadow: 0 0 0 0 rgba(255, 255, 255, 1);
-        animation: pulse-white 2s infinite;
-    }
-    .updated:before {
-        content: '';
-        background: transparent;
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        transform: scale(1);
-        z-index: 30;
-        top: -6px;
-        left: 0;
-        box-shadow: 0 4px 4px 0 #00000040;
-    }
 
-}
-
-.hidden {
-    display: none;
-}
-@keyframes pulse-white {
-    0% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(var(--calendar-primary-color), 0.7);
-    }
-
-    70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 4px rgba(var(--calendar-primary-color), 0);
-    }
-
-    100% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(var(--calendar-primary-color), 0);
-    }
 }
 @media (max-width: 959px) {
     .calendar-wrap {

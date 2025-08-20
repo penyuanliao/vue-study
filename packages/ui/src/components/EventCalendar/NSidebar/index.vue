@@ -178,7 +178,7 @@ export default defineComponent({
     .sidebar-right-shadow {
         position: absolute;
         top: 0;
-        right: 0;
+        right: -1px;
         width: 30px;
         height: 100%;
         background-image: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 20%, #FFFFFF 90%);
@@ -269,7 +269,7 @@ export default defineComponent({
         .calendars {
             --calendars-color: #F15624;
             //width: 100%;
-            max-width: 92px;
+            //max-width: 92px;
             min-width: 92px;
             height: 30px;
             position: relative;
@@ -287,7 +287,7 @@ export default defineComponent({
         .calendars:after {
             content: '';
             position: absolute;
-            width: 88px;
+            width: calc(100% - 4px);
             height: 26px;
             background: var(--calendars-color);
             left: 2px;
@@ -307,13 +307,16 @@ export default defineComponent({
             z-index: -2;
         }
         .text {
-            color: white;
+            color: #202020;
             font-family: 'Montserrat', sans-serif;
             font-size: 12px;
             font-weight: 700;
             overflow: hidden;
             //text-overflow: ellipsis;
             white-space: nowrap;
+        }
+        .icon {
+            color: #202020;
         }
     }
     .scheduled-m::-webkit-scrollbar {

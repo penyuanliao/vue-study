@@ -1,4 +1,5 @@
 import { onBeforeUnmount, ref } from 'vue';
+import { gsap } from "gsap";
 
 let instance: ReturnType<typeof createManager> | null = null;
 
@@ -18,6 +19,7 @@ export interface ITouchMoveInfo {
 const createManager = () => {
     let el: HTMLElement | null = null;
     let moveStartX: number = 0;
+    const orientation = ref(''); // 預設為縱向
     // 目前第幾頁
     const page = ref<number>(0);
     // 最大頁數
@@ -70,20 +72,42 @@ const createManager = () => {
             } else {
                 left = info.value.width * page.value - inset;
             }
-            if (el) el.scrollTo({ left, behavior: 'smooth' });
+            // if (el) el.scrollTo({ left, behavior: 'smooth' });
+            gsap.to(el, {
+                scrollLeft: left,
+                duration: 0.5,
+                ease: "power2.out"
+            });
             info.value.x = left;
         } else if (deltaX > 100) {
             if (page.value - 1 < 0) return;
             if (focusElement.value) focusElement.value.blur();
             page.value -= 1;
             left = info.value.width * page.value - inset;
-            if (el) el.scrollTo({ left, behavior: 'smooth' });
+            // if (el) el.scrollTo({ left, behavior: 'smooth' });
+            gsap.to(el, {
+                scrollLeft: left,
+                duration: 0.5,
+                ease: "power2.out"
+            });
             info.value.x = left;
         }
     };
-
+    const checkOrientation = (): boolean => {
+        const prev: string = orientation.value;
+        if (window.matchMedia('(orientation: portrait)').matches) {
+            orientation.value = 'portrait';
+        } else {
+            orientation.value = 'landscape';
+        }
+        return (prev !== orientation.value);
+    };
     const resize = () => {
         if (!el) return;
+        if (window.innerWidth < 960) {
+            // 手機版旋轉才觸發
+            if (!checkOrientation()) return;
+        }
         info.value.clientWidth = el.clientWidth;
         info.value.added = el.clientWidth % 46; // ㄧ頁多餘寬度
         info.value.scrollWidth = el.scrollWidth - 8;
@@ -111,7 +135,7 @@ const createManager = () => {
             element.addEventListener('mousedown', onMouseStart);
             element.addEventListener('mouseup', onMouseEnd);
         }
-        window.addEventListener('resize', resize);
+        window.addEventListener('resize', resize, false);
     };
 
     const remove = (element: HTMLElement | null = el) => {

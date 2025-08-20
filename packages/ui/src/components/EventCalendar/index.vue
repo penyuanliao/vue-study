@@ -28,14 +28,14 @@ export default defineComponent({
         GridType,
         NCalendarContent
     },
-    setup(props) {
+    setup() {
         // DEMO
         const apiData = ref(json);
         const current = ref<any>(null);
-        const now = new Date('2024/6/1'); // 今天時間
+        const now = new Date('2025/2/1'); // 今天時間
         const popupTips = ref<boolean>(false); // 是否開啟最新資訊提示
         const isCurrentMonth = ref<boolean>(false);
-        const activeDate = ref<Date>(new Date('2024/08/02')); // safari 要到日不能只有月份
+        const activeDate = ref<Date>(new Date('2025/02/01')); // safari 要到日不能只有月份
         const calendars = ref<ICalendars[]>([]);
         const events = ref<IEvents[]>([]);
         const gridType = ref<'medium' | 'small'>('small');
@@ -46,15 +46,15 @@ export default defineComponent({
                 isUpdate: false
             },
             {
-                key: '2024/6/1',
-                isUpdate: false
-            },
-            {
                 key: '2024/7/1',
                 isUpdate: false
             },
             {
                 key: '2024/8/1',
+                isUpdate: false
+            },
+            {
+                key: '2025/2/1',
                 isUpdate: true
             }
         ]);
@@ -79,6 +79,15 @@ export default defineComponent({
             if (+month === 8) {
                 apiData.value = json;
             }
+            if (+month === 2) {
+                apiData.value = month6;
+            }
+            if (+month === 1) {
+                apiData.value = month6;
+            }
+            if (+month === 3) {
+                apiData.value = month6;
+            }
         }
 
         const handle = (value: { isChecked: boolean, id: string }) => {
@@ -97,7 +106,14 @@ export default defineComponent({
 
             } else {
                 events.value = current.value?.events.filter(({ title, eventDesc }: IEvents) => {
-                    return title.toLowerCase().includes(value.toLowerCase()) || eventDesc.toLowerCase().includes(value.toLowerCase());
+                    const titleWords: string = title.toLowerCase();
+                    let str: string =  eventDesc.toLowerCase(); // 轉換小寫
+                    str = str.replace(/<\/?[^>]*>/g, ''); // 移除html標籤
+                    str = str.replace(/[ \t]*\n/g, '\n'); // 移除尾部空白
+                    str = str.replace(/&nbsp;/ig, ''); //移除&nbsp;
+                    const descWords: string = str;
+                    const searchValue: string = value.toLowerCase();
+                    return titleWords.includes(searchValue) || descWords.includes(searchValue);
                 });
             }
         };
@@ -109,13 +125,11 @@ export default defineComponent({
             } else {
                 showToolbar.value = true;
             }
-            console.log("onSearchOpenHandle", isMobile, value);
         };
         // 按下月份
         const onClickCalendarThHandle = (th: string) => {
             const [ _, month ] = th.split("/");
             const selectMonth: string = (th.split('/') <= 2) ? `${th}/1` : th;
-            console.log(`onClickCalendarThHandle: ${selectMonth}`, selectMonth.indexOf('2024/06'), activeDate.value.getMonth() === now.getMonth());
             activeDate.value = new Date(selectMonth);
             isCurrentMonth.value = activeDate.value.getMonth() === now.getMonth();
             setData(month);
@@ -128,7 +142,6 @@ export default defineComponent({
         };
 
         const onClickThisMonthHandle = (bool: boolean) => {
-            console.log(`onClickThisMonthHandle: ${bool}`);
             // popupTips.value = !popupTips.value; // 測試提示彈窗
             // isDeflate.value = !isDeflate.value; // 測試合併活動時間
 
@@ -439,7 +452,6 @@ export default defineComponent({
     .n-calendar-wrap {
         width: 100%;
         padding: 8px 8px;
-        overflow: hidden;
         grid-template-columns: auto 1fr;
         &:before {
             inset: 8px;
@@ -450,20 +462,31 @@ export default defineComponent({
             .today-btn {
                 display: none;
             }
+            position: sticky;
+            top: 0;
+            background-color: white;
+            border-top-right-radius: 24px;
+            border-top-left-radius: 24px;
+            z-index: 999;
+            width: 100%;
         }
         .sidebar-collapse {
-            width: auto;
+            width: 100%;
             height: 40px;
-            overflow: hidden;
             max-width: none;
             grid-area: 2 / 1 / auto / span 6;
-            z-index: 30;
+            //z-index: 30;
             transition: opacity .3s ease-in-out;
             display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: center;
             pointer-events: auto;
+            background-color: white;
+            position: sticky;
+            top: 64px;
+            z-index: 999;
+
         }
         .content {
             grid-area: 3 / 1 / auto / span 5;

@@ -167,9 +167,11 @@ export default defineComponent({
     .tool-bar-container {
         min-width: 230px;
         height: 65px;
-        gap: 18px;
+        /* gap: 18px;  // Safari 老版本不支援 */
         padding-right: 70px;
-
+        & > * {
+            margin-right: 18px;
+        }
         .calendar-th {
             width: 47px;
             height: 49px;
@@ -189,8 +191,13 @@ export default defineComponent({
                 margin-top: -20px;
 
             }
+
+            .updated {
+                left: -4px;
+                top: -4px;
+            }
             .updated-tooltip {
-                display: none;
+                pointer-events: none;
             }
             &.active {
                 border: 1px solid #F15624;
@@ -209,9 +216,6 @@ export default defineComponent({
                 .year-digits {
                     color: white;
                 }
-            }
-            .updated {
-                display: none;
             }
         }
     }

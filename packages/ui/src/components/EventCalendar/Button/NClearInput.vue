@@ -38,7 +38,7 @@ export default defineComponent({
         onMounted(() => {
             if (searchInput.value) {
                 searchInput.value.addEventListener('keyup', onKeyupHandle);
-                setTimeout(() => searchInput.value.focus(), 500);
+                setTimeout(() => searchInput.value?.focus(), 500);
             }
         });
         onUnmounted(() => {

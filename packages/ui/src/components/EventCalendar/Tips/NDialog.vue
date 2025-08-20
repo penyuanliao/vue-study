@@ -88,6 +88,7 @@ export default defineComponent({
             #00023E 100%);
     transition: opacity 0.3s ease;
     border-radius: 10px;
+    pointer-events: auto;
 }
 .dialog-content {
     width: 100%;

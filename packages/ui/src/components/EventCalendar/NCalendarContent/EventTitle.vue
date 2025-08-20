@@ -103,6 +103,10 @@ export default defineComponent({
         continuing: {
             type: Boolean,
             default: false
+        },
+        updated: {
+            type: Boolean,
+            default: false
         }
     },
     setup(props) {
@@ -137,7 +141,7 @@ export default defineComponent({
         };
         // 每個位置寬度
         const layouts = {
-            marginLeft: 10,
+            marginLeft: 20,
             marginRight: 40,
             gap: 8,
             icon: 30,
@@ -197,7 +201,7 @@ export default defineComponent({
             if (descText) {
                 el.innerHTML = descText;
                 container.value.appendChild(el);
-                descWidth = el.offsetWidth;
+                descWidth = el.offsetWidth + layouts.marginLeft;
                 container.value.removeChild(el);
             }
 
@@ -205,7 +209,7 @@ export default defineComponent({
             if (timeText) {
                 el.innerHTML = timeText;
                 container.value.appendChild(el);
-                timeWidth = el.offsetWidth;
+                timeWidth = el.offsetWidth + layouts.marginLeft;
                 container.value.removeChild(el);
             }
             eTimeWidth.value = timeWidth;
@@ -327,9 +331,16 @@ export default defineComponent({
                         `);
 
                         const viewWidth: number = touchManager.info.value.width;
-                        if ((currSpan === cell && endedPage !== page) || (currSpan === cell && props.continuing)) {
+                        if ((currSpan === cell && endedPage !== page) || (currSpan === cell && props.continuing) || (offsetEnded >= 32 && endLeftStart > props.columnStart)) {
                             // 一整條的不動作
-                            console.log('一整條的不動作');
+                            if (currSpan === cell && props.continuing && isEnd && props.columnStart > endLeftStart) {
+                                console.log('一整條的不動作1');
+                                const { added } = touchManager.info.value;
+                                target.style.minWidth = `${viewWidth + added}px`;
+                                target.style.maxWidth = `${viewWidth + added}px`;
+                            } else {
+                                console.log('一整條的不動作2');
+                            }
                         } else if (offset === 0 && (!isEnd || props.columnStart <= (32 - cell))) {
                             // 左邊物件 1. 不是最後一頁 2. 最後一頁檢查左邊有span
                             console.log('左邊物件');
@@ -346,10 +357,17 @@ export default defineComponent({
                                 console.log('右邊物件-1', !isEnd && offsetEnded % cell === 0 && startPage !== endedPage);
                                 target.style.minWidth = `${target.offsetWidth + viewWidth + added - ((currSpan - 1) * 46)}px`;
                                 target.style.maxWidth = `${target.offsetWidth + viewWidth + added - ((currSpan - 1) * 46)}px`;
-                            } else {
-                                console.log('右邊物件-2', added, (touchManager.info.value.clientWidth) % 46);
+                            } else if (isEnd) {
+                                console.log('右邊物件-2.1', added - 30);
                                 target.style.minWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
                                 target.style.maxWidth = `${target.offsetWidth + viewWidth + added - (currSpan * 46)}px`;
+                            } else {
+                                const rightOutside: boolean = (start + props.span) <= offsetEnded; // 多餘超出扣除
+                                const offset2: number = rightOutside ? ((window.innerWidth - 30) / 46 - cell) * 46 : offset;
+                                console.log('右邊物件-2.2');
+                                target.style.transform = `translateX(calc(-100% + ${offset2}px))`;
+                                target.style.minWidth = `${target.offsetWidth + viewWidth - (currSpan * 46) + offset2}px`;
+                                target.style.maxWidth = `${target.offsetWidth + viewWidth - (currSpan * 46) + offset2}px`;
                             }
                         } else if (isEnd) {
                             const { added } = touchManager.info.value; // 最後一頁是靠右
@@ -369,10 +387,10 @@ export default defineComponent({
                         } else {
                             // 中間位置
                             const { added } = touchManager.info.value; // 最後一頁是靠右
-                            console.log('中間位置', backWidth, added);
-                            target.style.transform = `translateX(-${offset * 46 + (isStart ? 0 : 8)}px)`;
-                            target.style.minWidth = `${viewWidth + added - (isStart ? 8 : 0)}px`;
-                            target.style.maxWidth = `${viewWidth + added - (isStart ? 8 : 0)}px`;
+                            console.log('中間位置', backWidth, isStart);
+                            target.style.transform = `translateX(-${offset * 46 + (isStart ? -4 : 8)}px)`;
+                            target.style.minWidth = `${viewWidth + added - (isStart ? 16 : 0)}px`;
+                            target.style.maxWidth = `${viewWidth + added - (isStart ? 16 : 0)}px`;
                         }
                     } else if (totalLength <= offsetEnded) {
                         // 左至右開
@@ -384,7 +402,11 @@ export default defineComponent({
                     }
                 } else {
                     // PC版本
-                    target.style.minWidth = `${defSize + textWidth.value + titleWidth - 8}px`;
+                    if (container.value.classList.contains('point-right')) {
+                        target.style.minWidth = `${defSize + Math.min(textWidth.value, ((props.columnStart - 1) * 46)) + titleWidth - 8}px`;
+                    } else {
+                        target.style.minWidth = `${defSize + textWidth.value + titleWidth - 8}px`;
+                    }
                 }
                 if (target && target.parentElement) (target.parentElement as HTMLElement).style.zIndex = '30';
                 isHover.value = true;
@@ -412,12 +434,21 @@ export default defineComponent({
         // 小畫面: 檢查展開方向
         const checkScreenBorderlineMobile = () => {
             const { cell } = touchManager.info.value;
-            const len: number = (props.columnStart - 1) + props.span;
+            const start: number = props.columnStart - 1;
+            const len: number = start + props.span;
             const page: number = touchManager.page.value;
             const maxPage: number = touchManager.maxPage.value;
+            const pageStart: number = cell * page;
+            const pageEnd: number = cell * (page + 1);
+            if (isHover.value) {
+                if (pageStart > start && len <= pageEnd) {
+                    return 'left';
+                }
+            }
+
             if (cell * page === props.columnStart - 1 && page !== maxPage) return 'left'; // 開頭左至右
             if (len >= 32) return 'right';
-            if (len < cell * (page + 1)) return 'left';
+            if (len < pageEnd) return 'left';
             return 'right';
         };
         // 檢查展開方向
@@ -448,6 +479,7 @@ export default defineComponent({
                 'event-title-container': true,
                 small: props.small,
                 icon: props.icon,
+                hover: isHover.value,
                 'point-right': borderline === 'right',
                 'point-left': borderline === 'left'
             };
@@ -549,11 +581,20 @@ export default defineComponent({
                     eventContentRef.value?.classList.remove('visible-hidden');
                 }
             }, 300);
+            if (eventContentRef.value?.offsetWidth <= 20) eventContentRef.value?.classList.add('visible-hidden');
+
             const offsetX: number = Math.max(left + indentWidth, 0);
+            const width: string = isHover.value ? `${window.innerWidth - 40}px` : `calc(100% - ${offsetX + 10}px)`;
             return {
                 visibility,
-                left: `${offsetX}px`,
-                width: `calc(100% - ${offsetX + 10}px)`
+                left: `${visibility === 'hidden' ? 10 : offsetX}px`,
+                width
+            };
+        };
+        const eventTitleStyle = () => {
+            return {
+                '--updated-left': '-6px',
+                background: props.color
             };
         };
         const measureWordWidth = async (value: string) => {
@@ -583,7 +624,7 @@ export default defineComponent({
             measureWordWidth(value);
         });
         // 監聽頁面換頁
-        watch(() => touchPage.value, (value) => {
+        watch(() => touchPage.value, () => {
             if (!isMobile.value) return;
             setupRange();
             const {
@@ -652,6 +693,7 @@ export default defineComponent({
             containerClass,
             contentStyle,
             sectionStyle,
+            eventTitleStyle,
             openLinkHandle,
             openLinkMobileHandle
         };
@@ -667,10 +709,11 @@ export default defineComponent({
         @click="openLinkHandle"
     >
         <div
-            class="event-title-bg"
-            :style="{
-                background: color
+            :class="{
+                'event-title-bg': true,
+                updated
             }"
+            :style="eventTitleStyle()"
         />
         <div
             class="event-title-content"
@@ -681,7 +724,7 @@ export default defineComponent({
                 :style="sectionStyle()"
             >
                 <div
-                    v-if="icon"
+                    v-if="icon && !isHover"
                     class="event-icon"
                 >
                     <svg
@@ -710,6 +753,9 @@ export default defineComponent({
                 </div>
                 <div
                     class="event-title"
+                    :style="{
+                        maxWidth: `${ tag ? 'calc(100% - 55px)' : '100%' }`
+                    }"
                     ref="titleRef"
                 >
                     <h1
@@ -770,7 +816,7 @@ export default defineComponent({
         height: 100%;
         min-width: 46px;
         min-height: 30px;
-        overflow: hidden;
+        //overflow: hidden;
         position: absolute;
         top: 0;
         left: 20px;
@@ -863,6 +909,7 @@ export default defineComponent({
         min-width: 100%;
         height: 80px;
         &.icon {
+            flex-shrink: 0;
             .event-title {
                 visibility: visible;
                 display: flex;
@@ -978,7 +1025,7 @@ export default defineComponent({
         overflow:hidden;
         white-space: normal;
         padding-left: 20px;
-        //max-width: 160px;
+        max-width: 160px;
         &.small {
             font-size: 19px;
             white-space: nowrap;
@@ -996,7 +1043,7 @@ export default defineComponent({
     font-size: 19px;
     white-space: nowrap;
     pointer-events: none;
-    color: black;
+    color: #202020;
 }
 .event-content {
     width: auto;
@@ -1013,8 +1060,10 @@ export default defineComponent({
     &.hidden {
         visibility: hidden;
     }
+    .event-desc,
     .event-date {
         text-overflow: ellipsis;
+        overflow: hidden;
     }
 }
 .detail-btn {
@@ -1036,10 +1085,52 @@ export default defineComponent({
 .visible-hidden {
     visibility: hidden;
 }
+.updated:after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    background: #FF0000;
+    border: white 2px solid;
+    border-radius: 50%;
+    z-index: 30;
+    box-sizing: border-box;
+    top: -6px;
+    left: var(--updated-left, -6px);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 1);
+    animation: pulse-white 2s infinite;
+}
+.updated:before {
+    content: '';
+    background: transparent;
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    transform: scale(1);
+    z-index: 30;
+    top: -6px;
+    left: var(--updated-left, -6px);
+    box-shadow: 0 4px 4px 0 #00000040;
+}
+@keyframes pulse-white {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(var(--calendar-primary-color), 0.7);
+    }
 
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 4px rgba(var(--calendar-primary-color), 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(var(--calendar-primary-color), 0);
+    }
+}
 @media (max-width: 959px) {
     .event-title-container {
-        overflow: hidden;
         .event-title-section {
             pointer-events: none;
             &.section-animate {
@@ -1099,6 +1190,7 @@ export default defineComponent({
 
                     white-space: wrap;
                     line-height: 16px;
+                    max-height: calc(60px - 16px);
                 }
             }
             .detail-btn {
@@ -1125,7 +1217,7 @@ export default defineComponent({
         }
     }
     .event-icon {
-        flex-shrink: 1;
+        flex-shrink: 0;
     }
 }
 @keyframes opacity {
