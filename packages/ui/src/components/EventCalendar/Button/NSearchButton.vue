@@ -182,7 +182,7 @@ export default defineComponent({
         justify-content: center;
         border-radius: 999px;
         transition: all 0.3s;
-        background-color: #D9D9D9;
+        background-color: #F15624;
     }
     &.searching:after {
         background-color: #F15624;
@@ -207,6 +207,7 @@ export default defineComponent({
     font-weight: 700;
     &.active {
         width: 100%;
+        border-color: #F15624;
     }
 }
 

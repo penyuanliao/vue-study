@@ -78,8 +78,9 @@ const useEventCalendar = (data: any, activeDate: Date, isDeflate: boolean = fals
     const isContinued = (time: Date) => (time?.getMonth() !== activeDate?.getMonth());
     // 檢查活動是否該月結束
     const isContinuing = (time: Date, daysInMonth: number) => {
-        const lastDay = time?.getDate() > (31 - daysInMonth); // 超過該月份最後N天
-        if (time.getFullYear() > activeDate.getFullYear() && lastDay) return true;
+        const nextMonth: boolean = time.getMonth() + 1 === activeDate.getMonth() + 2;
+        const lastDay: boolean = nextMonth ? time.getDate() > (31 - daysInMonth) : true; // 超過該月份最後N天
+        if (time.getFullYear() > activeDate.getFullYear()) return true;
         return (time?.getMonth() !== activeDate?.getMonth() && lastDay);
     };
     // 每個area位置的fragment

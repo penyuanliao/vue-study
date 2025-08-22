@@ -28,7 +28,7 @@ export default defineComponent({
             if (!searchValue.value) {
                 // emit('change', searchValue.value);
             }
-        }
+        };
         const onKeyupHandle = (e: KeyboardEvent) => {
             if (e.key === 'Enter') {
                 emit('change', searchValue.value);
