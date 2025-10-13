@@ -26,6 +26,25 @@ $icon-color: white;
     background-color: rgba(30, 31, 34, 0.5);
   }
 }
+.scroll-bar-hidden {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+.theme-white {
+  background: white !important;
+  .n-calendar-wrap {
+    background-color: rgba(159, 159, 159, 0.1);
+    border: rgba(159, 159, 159, 0.3) 1px solid;
+  }
+}
+.theme-orange {
+  background: #F15624 !important;
+  .n-calendar-wrap {
+    background-color: rgba(217, 217, 217, 0.1);
+    border: rgba(255, 255, 255, 0.3) 1px solid;
+  }
+}
 
 .text-500 {
   font-weight: 500;

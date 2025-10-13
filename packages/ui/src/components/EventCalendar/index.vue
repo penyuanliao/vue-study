@@ -15,10 +15,12 @@ import month5 from './dataMonth5.json';
 import month7 from './dataMonth7.json';
 import useNTouchMove from '@/components/EventCalendar/NTouchMove/useNTouchMove';
 import NSymbols from './Button/NSymbols.vue';
+import EventHeader from "@/components/EventCalendar/NCalendarContent/EventHeader.vue";
 
 export default defineComponent({
     name: 'EventCalendar',
     components: {
+        EventHeader,
         NSymbols,
         NDialog,
         NSidebar,
@@ -32,7 +34,7 @@ export default defineComponent({
         // DEMO
         const apiData = ref(json);
         const current = ref<any>(null);
-        const now = new Date('2025/2/1'); // 今天時間
+        const now = new Date('2025/2/2'); // 今天時間
         const popupTips = ref<boolean>(false); // 是否開啟最新資訊提示
         const isCurrentMonth = ref<boolean>(false);
         const activeDate = ref<Date>(new Date('2025/02/01')); // safari 要到日不能只有月份
@@ -63,6 +65,7 @@ export default defineComponent({
         const showToolbar = ref<boolean>(true);
         const isDeflate = ref<boolean>(true);
         const todayBtnDisabled = ref<boolean>(true);
+        const headerStickyEnabled = ref<boolean>(true);
         const contentRef = ref<HTMLElement|null>(null);
         const touchManager = useNTouchMove();
 
@@ -160,7 +163,6 @@ export default defineComponent({
         };
 
         onMounted(() => {
-
             touchManager.setup(contentRef.value);
             fourMonthlyPeriod.value.forEach((item, index) => {
                 const [ year, month ] = item.key.split("/");
@@ -183,7 +185,6 @@ export default defineComponent({
             });
             popupTips.value = !popupTipsManager.getStatus('event-calendar-popup-tips');
             console.log('todayBtnDisabled:', todayBtnDisabled.value);
-
         });
         return {
             contentRef,
@@ -197,6 +198,7 @@ export default defineComponent({
             showSidebar,
             showToolbar,
             todayBtnDisabled,
+            headerStickyEnabled,
             popupTipsManager,
             handle,
             gridTypeChange,
@@ -212,10 +214,13 @@ export default defineComponent({
 </script>
 
 <template>
-    <div class="event-calendar-container">
-        <div class="n-calendar-wrap">
+    <div class="event-calendar-container ">
+        <div :class="{
+            'n-calendar-wrap': true,
+            'sticky': headerStickyEnabled
+        }">
             <!-- 標題日期 -->
-            <div class="n-title">
+            <div class="event-calendar-header">
                 <NToggleButton
                     class="today-btn"
                     :class="{
@@ -253,10 +258,10 @@ export default defineComponent({
                     @open="onSearchOpenHandle"
                 />
             </div>
+            <!-- 手機版固定top會出現圓角問題，用這個去遮擋 -->
+            <div class="sticky-header-radius-mask" />
             <!-- 標籤 -->
-            <div
-                class="sidebar-collapse"
-            >
+            <div class="sidebar-collapse">
                 <NSidebar
                     class="sidebar"
                     v-model:calendars="calendars"
@@ -283,6 +288,14 @@ export default defineComponent({
                     </div>
                 </div>
             </div>
+            <!-- 月份標題01 ~ 31 -->
+            <EventHeader
+                class="sticky-month-header"
+                :activeDate="activeDate"
+                :currentDate="now"
+                :padding="true"
+            />
+            <!-- 活動事件內容 -->
             <div
                 class="content scroll-bar-horizontal"
                 ref="contentRef"
@@ -292,13 +305,15 @@ export default defineComponent({
                     :activeDate="activeDate"
                     :events="events"
                     :selected="isCurrentMonth"
+                    :stickyEnabled="headerStickyEnabled"
                 />
             </div>
         </div>
         <NDialog
             v-model:open="popupTips"
-            label="一周内更新资讯"
-            @close="popupTipsManager.setStatus('event-calendar-popup-tips', true)"
+            class="dialog"
+            :label="['红点为一周内上架活动', '显示日期小于四日活动', '独家活动']"
+            @close="popupTipsManager.setStatus('event-calendar-popup-tips', true); popupTips = false;"
         />
     </div>
 </template>
@@ -307,8 +322,8 @@ export default defineComponent({
 @use 'theme';
 
 .event-calendar-container {
-    min-width: 0;
-    min-height: 0;
+    min-width: 300px;
+    min-height: 300px;
     //min-height: 100vh;
     //max-width: 1920px;
     height: 100%;
@@ -319,9 +334,6 @@ export default defineComponent({
     padding: 19px 12px;
     display: flex;
     justify-content: center;
-    .mask {
-        display: none;
-    }
 }
 .n-calendar-wrap {
     width: 100%;
@@ -345,10 +357,11 @@ export default defineComponent({
         border-radius: 24px;
         z-index: -1;
     }
-    .n-title {
+    .event-calendar-header {
         width: 100%;
         height: 100%;
         min-height: 100px; // 146px
+        min-width: 300px;
         grid-column: 1 / span 5;
         grid-column-start: 2;
         position: relative;
@@ -407,6 +420,9 @@ export default defineComponent({
         color: white;
         border-color: #F1F1F1;
     }
+    .sticky-month-header {
+        display: none;
+    }
 }
 
 .grid-type-group {
@@ -428,53 +444,60 @@ export default defineComponent({
 .grid-type-group-mobile {
     display: none;
 }
+.dialog {
+    display: none;
+}
 
 @media (max-width: 959px) {
     .event-calendar-container {
         padding: 1px 1px;
-        .mask {
-            display: inline;
-            z-index: 12;
-            &.active {
-                position: absolute;
-                display: block;
-                width: calc(100% + 4px);
-                height: calc(100% + 4px);
-                top: -2px;
-                left: -2px;
-                background: rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(5px);
-                transition: all 0.1s;
-                pointer-events: auto;
-            }
-        }
     }
     .n-calendar-wrap {
         width: 100%;
         padding: 8px 8px;
         grid-template-columns: auto 1fr;
+        border-radius: 17px;
         &:before {
             inset: 8px;
         }
-        .n-title {
+        .event-calendar-header {
             min-height: 0;
             grid-area: 1 / 2 / auto / span 4;
             .today-btn {
                 display: none;
             }
-            position: sticky;
-            top: 0;
-            background-color: white;
-            border-top-right-radius: 24px;
-            border-top-left-radius: 24px;
-            z-index: 999;
+            &.sticky {
+                position: sticky;
+                top: 0;
+                background-color: white;
+                border-top-right-radius: 17px;
+                border-top-left-radius: 17px;
+                z-index: 999;
+                width: 100%;
+            }
+        }
+        .sticky-header-radius-mask {
             width: 100%;
+            height: 17px;
+            min-height: 0;
+            min-width: 0;
+            position: sticky;
+            background-color: white;
+            flex-direction: row;
+            grid-area: 2 / 1 / auto / span 6;
+            top: 0;
+            margin-top: -17px;
+            z-index: 800;
+            display: none;
+            &.sticky {
+                display: flex;
+            }
         }
         .sidebar-collapse {
             width: 100%;
             height: 40px;
             max-width: none;
-            grid-area: 2 / 1 / auto / span 6;
+            grid-area: 3 / 1 / auto / span 6;
             //z-index: 30;
             transition: opacity .3s ease-in-out;
             display: flex;
@@ -483,20 +506,73 @@ export default defineComponent({
             justify-content: center;
             pointer-events: auto;
             background-color: white;
-            position: sticky;
-            top: 64px;
-            z-index: 999;
 
+            &.sticky {
+                position: sticky;
+                top: 64px;
+                z-index: 999;
+            }
         }
+        .sticky-month-header {
+            position: relative;
+            top: 0;
+            width: 100%;
+            height: 63px;
+            min-width: 0;
+            grid-area: 4 / 1 / auto / span 5;
+            overflow: auto;
+            z-index: 999;
+            background-color: white;
+            --padding-start: 8px;
+            display: none;
+            &.sticky {
+                position: sticky;
+                top: 100px;
+                display: flex;
+            }
+        }
+        .sticky-month-header::-webkit-scrollbar {
+            display: none;
+        }
+        &.sticky {
+            .event-calendar-header {
+                position: sticky;
+                top: 0;
+                background-color: white;
+                border-top-right-radius: 17px;
+                border-top-left-radius: 17px;
+                z-index: 999;
+                width: 100%;
+            }
+            .sticky-header-radius-mask {
+                display: flex;
+            }
+            .sidebar-collapse {
+                position: sticky;
+                top: 64px;
+                z-index: 999;
+            }
+            .sticky-month-header {
+                position: sticky;
+                top: 100px;
+                display: flex;
+            }
+        }
+
+
         .content {
-            grid-area: 3 / 1 / auto / span 5;
+            grid-area: 5 / 1 / auto / span 5;
             padding: 0 0 0 8px;
             transition: all 0.3s ease;
             overflow: hidden;
+            height: 200vh;
         }
     }
     .grid-type-group {
         display: none;
+    }
+    .dialog {
+        display: block;
     }
     .grid-type-group-mobile {
         height: 100%;
@@ -527,7 +603,6 @@ export default defineComponent({
         width: calc(100% - 53px);
         pointer-events: none;
     }
-
 }
 
 </style>

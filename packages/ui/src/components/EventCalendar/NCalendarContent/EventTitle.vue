@@ -112,6 +112,7 @@ export default defineComponent({
     setup(props) {
         const container = ref<HTMLElement | null>(null);
         const titleRef = ref<HTMLElement | null>(null);
+        const eventTitleContentRef = ref<HTMLElement | null>(null);
         const sectionRef = ref<HTMLElement | null>(null);
         const eventDateRef = ref<HTMLElement | null>(null);
         const eventContentRef = ref<HTMLElement | null>(null);
@@ -402,8 +403,13 @@ export default defineComponent({
                     }
                 } else {
                     // PC版本
-                    if (container.value.classList.contains('point-right')) {
-                        target.style.minWidth = `${defSize + Math.min(textWidth.value, ((props.columnStart - 1) * 46)) + titleWidth - 8}px`;
+                    // eslint-disable-next-line no-lonely-if
+                    if (container.value?.classList.contains('point-right')) {
+                        // 文字太長超出
+                        target.style.minWidth = `${Math.min((props.columnStart - 1 + props.span) * 46, defSize + textWidth.value + titleWidth - 8)}px`;
+                    } else if (container.value?.classList.contains('point-left')) {
+                        // 文字太長超出
+                        target.style.minWidth = `${Math.min((32 - (props.columnStart - 1)) * 46, defSize + textWidth.value + titleWidth - 8)}px`;
                     } else {
                         target.style.minWidth = `${defSize + textWidth.value + titleWidth - 8}px`;
                     }
@@ -499,7 +505,8 @@ export default defineComponent({
             window.open(props.link, '_blank');
         };
         const resize = () => {
-            isMobile.value = window.innerWidth < 960;
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            isMobile.value = window.innerWidth < 960 || isTouchDevice;
             setupRange();
         };
         const contentStyle = () => {
@@ -581,7 +588,7 @@ export default defineComponent({
                     eventContentRef.value?.classList.remove('visible-hidden');
                 }
             }, 300);
-            if (eventContentRef.value?.offsetWidth <= 20) eventContentRef.value?.classList.add('visible-hidden');
+            if ((eventContentRef.value?.offsetWidth || 0) <= 20) eventContentRef.value?.classList.add('visible-hidden');
 
             const offsetX: number = Math.max(left + indentWidth, 0);
             const width: string = isHover.value ? `${window.innerWidth - 40}px` : `calc(100% - ${offsetX + 10}px)`;
@@ -591,12 +598,10 @@ export default defineComponent({
                 width
             };
         };
-        const eventTitleStyle = () => {
-            return {
-                '--updated-left': '-6px',
-                background: props.color
-            };
-        };
+        const eventTitleStyle = () => ({
+            '--updated-left': '-6px',
+            background: props.color
+        });
         const measureWordWidth = async (value: string) => {
             if (!value || !container.value) return;
             sectionRef.value?.classList.remove('section-animate'); // 切換月份時不需要動畫
@@ -646,6 +651,7 @@ export default defineComponent({
             }
         });
         onMounted(() => {
+            console.log("onMounted");
             window.addEventListener('resize', resize);
             resize();
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -659,10 +665,12 @@ export default defineComponent({
                         touchManager.setFocusElement(null);
                     });
                 } else {
-                    container.value.addEventListener('mouseenter', onMouseEnterHandle);
-                    container.value.addEventListener('mouseleave', () => {
-                        if (document.activeElement === container.value) onMouseLeaveHandle();
-                    });
+                    if (eventTitleContentRef.value) {
+                        eventTitleContentRef.value.addEventListener('mouseenter', onMouseEnterHandle);
+                        eventTitleContentRef.value.addEventListener('mouseleave', () => {
+                            if (document.activeElement === container.value) onMouseLeaveHandle();
+                        });
+                    }
                     container.value.addEventListener('focusout', () => {
                         onMouseLeaveHandle();
                     });
@@ -675,9 +683,9 @@ export default defineComponent({
         });
         onUnmounted(() => {
             window.removeEventListener('resize', resize);
-            if (container.value) {
-                container.value.removeEventListener('mouseenter', onMouseEnterHandle);
-                container.value.removeEventListener('mouseleave', onMouseLeaveHandle);
+            if (eventTitleContentRef.value) {
+                eventTitleContentRef.value.removeEventListener('mouseenter', onMouseEnterHandle);
+                eventTitleContentRef.value.removeEventListener('mouseleave', onMouseLeaveHandle);
             }
         });
 
@@ -689,6 +697,7 @@ export default defineComponent({
             titleRef,
             eventDateRef,
             eventContentRef,
+            eventTitleContentRef,
             sectionRef,
             containerClass,
             contentStyle,
@@ -716,6 +725,7 @@ export default defineComponent({
             :style="eventTitleStyle()"
         />
         <div
+            ref="eventTitleContentRef"
             class="event-title-content"
         >
             <div
@@ -724,32 +734,22 @@ export default defineComponent({
                 :style="sectionStyle()"
             >
                 <div
-                    v-if="icon && !isHover"
-                    class="event-icon"
+                    v-if="(icon || tag)"
+                    :class="{
+                        'event-icon': (icon && tag || icon && !tag),
+                        'event-title-tag': (!icon && tag)
+                    }"
                 >
-                    <svg
-                        style="pointer-events: none;"
-                        width="14"
-                        height="19"
-                        viewBox="0 0 14 19"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            d="M0 7C0 5.13872 0 4.20808 0.244717 3.45492C0.739307 1.93273 1.93273 0.739307 3.45491 0.244717C4.20808 0 5.13872 0 7 0C8.86128 0 9.79192 0 10.5451 0.244717C12.0673 0.739307 13.2607 1.93273 13.7553 3.45492C14 4.20808 14 5.13872 14 7V14.3874C14 16.3045 14 17.2631 13.658 17.77C13.2403 18.3893 12.5122 18.7242 11.7701 18.6383C11.1627 18.568 10.4349 17.9442 8.97931 16.6965C8.33858 16.1474 8.01821 15.8728 7.66631 15.7484C7.23517 15.5961 6.76483 15.5961 6.33369 15.7484C5.98179 15.8728 5.66142 16.1474 5.02069 16.6965C3.5651 17.9442 2.8373 18.568 2.22986 18.6383C1.48778 18.7242 0.759708 18.3893 0.341955 17.77C0 17.2631 0 16.3045 0 14.3874V7Z"
-                            fill="white"
+                    <div v-show="icon && !tag">
+                        <NSymbols name="eventIcon" />
+                    </div>
+                    <div v-show="tag">
+                        <NSymbols
+                            name="award"
+                            width="24"
+                            height="24"
                         />
-                    </svg>
-                </div>
-                <div
-                    v-if="tag"
-                    class="event-title-tag"
-                >
-                    <NSymbols
-                        name="award"
-                        width="24"
-                        height="24"
-                    />
+                    </div>
                 </div>
                 <div
                     class="event-title"
@@ -761,6 +761,9 @@ export default defineComponent({
                     <h1
                         :class="{
                             tag
+                        }"
+                        :style="{
+                            whiteSpace: `${!small ? (tag || icon) ? 'nowrap' : 'normal' : ''}`
                         }"
                     >
                         {{ title }}
@@ -784,6 +787,9 @@ export default defineComponent({
                 <NDetailButton
                     v-if="isMobile && isHover"
                     class="detail-btn"
+                    :style="{
+                        visibility: (isMobile && isHover ? 'visible' : 'hidden')
+                    }"
                     :color="color"
                     @pointerup="openLinkMobileHandle"
                 />
@@ -807,7 +813,6 @@ export default defineComponent({
     left: calc(1 / 2 * 100%);
     transform: translateX(calc(calc(1 / 2 * 100%) * -1));
     transition: min-width 0.3s ease, height 0.3s ease;
-    cursor: pointer;
     pointer-events: visible;
     &:focus {
         outline: none;
@@ -816,7 +821,7 @@ export default defineComponent({
         height: 100%;
         min-width: 46px;
         min-height: 30px;
-        //overflow: hidden;
+        overflow: hidden;
         position: absolute;
         top: 0;
         left: 20px;
@@ -826,6 +831,7 @@ export default defineComponent({
         justify-content: center;
         align-items: center;
         //margin-left: 4px;
+        cursor: pointer;
         z-index: 1;
     }
     .event-title-section {
@@ -928,7 +934,7 @@ export default defineComponent({
             left: 0;
             right: 0;
             border: 2px solid  #FFFFFF;
-            box-shadow: 0 2px 10px 0 #9F9F9F;
+            box-shadow: 0 2px 10px 0 rgba(159, 159, 159, 1);
         }
         .event-title {
             visibility: visible;
@@ -979,8 +985,8 @@ export default defineComponent({
     left: 20px;
     right: 20px;
     border-radius: 20px;
-    transition: box-shadow 0.6s ease;
     box-shadow: 0 2px 10px 0 rgba(159, 159, 159, 0);
+    transition: box-shadow 0.6s ease;
 }
 .event-title-tag {
     width: 30px;

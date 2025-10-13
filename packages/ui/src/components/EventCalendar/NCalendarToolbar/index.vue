@@ -54,12 +54,11 @@ export default defineComponent({
                 :class="{
                     'calendar-th': true,
                     active: date.getMonth() === currentDate.getMonth(),
-                    current: new Date('2024/06/01').getMonth() === date.getMonth()
+                    current: new Date('2025/02/01').getMonth() === date.getMonth()
                 }"
                 @click="onClickHandle(`${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`)"
             >
                 <div class="month-name">{{ padStart(date.getMonth() + 1) }}</div>
-<!--                <div class="year-digits">{{ date.getFullYear() }}</div>-->
                 <div class="year-digits">{{ monthNames[date.getMonth()] }}</div>
                 <NTooltip
                     v-if="isUpdate"

@@ -3,20 +3,22 @@ import { defineComponent, PropType, ref, onMounted, watch, nextTick } from 'vue'
 import SwitchButton from '../Button/SwitchButton.vue';
 import { cacheCalendarTagManager, ICalendars } from '../useEventCalendar';
 import NSymbols from '../Button/NSymbols.vue';
+import NDialog from '../Tips/NDialog.vue';
 
 export default defineComponent({
     name: 'NSidebar',
     components: {
+        NDialog,
         NSymbols,
         SwitchButton
     },
     props: {
         calendars: {
             type: Array as PropType<Array<ICalendars>>,
-            default: () => [],
+            default: () => []
         }
     },
-    emits: ['update:calendars'],
+    emits: ['update:calendars', 'change'],
     setup(props, { emit }) {
         const scheduleMobile = ref<HTMLDivElement>();
         const leftRef = ref<HTMLDivElement>();
@@ -26,6 +28,7 @@ export default defineComponent({
             const updated = [...props.calendars];
             updated[index].checked = value.checked;
             emit('update:calendars', updated);
+            emit('change', value);
             cacheCalendarTagManager.update(value.name, value.checked);
         };
         const scrollPosition = () => {
@@ -99,6 +102,11 @@ export default defineComponent({
                     @change="(value: any) => handle(value, i)"
                 />
             </div>
+            <NDialog
+                :label="['红点为一周内上架活动', '显示日期小于四日活动', '独家活动']"
+                class="dialog"
+                theme="light"
+            />
         </div>
         <div
             class="scheduled-m"
@@ -237,6 +245,11 @@ export default defineComponent({
 }
 .scheduled-m {
     display: none;
+}
+.dialog {
+    position: relative;
+    top: 0;
+    margin-left: 5px;
 }
 @media (max-width: 959px) {
     .sidebar {

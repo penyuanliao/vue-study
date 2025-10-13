@@ -1,5 +1,5 @@
 import { onBeforeUnmount, ref } from 'vue';
-import { gsap } from "gsap";
+import { gsap } from 'gsap';
 
 let instance: ReturnType<typeof createManager> | null = null;
 
@@ -49,7 +49,6 @@ const createManager = () => {
     };
 
     const onMouseMove = (e: TouchEvent | MouseEvent) => {
-
     };
 
     const onMouseEnd = (e: TouchEvent | MouseEvent) => {
@@ -76,7 +75,7 @@ const createManager = () => {
             gsap.to(el, {
                 scrollLeft: left,
                 duration: 0.5,
-                ease: "power2.out"
+                ease: 'power2.out'
             });
             info.value.x = left;
         } else if (deltaX > 100) {
@@ -88,7 +87,7 @@ const createManager = () => {
             gsap.to(el, {
                 scrollLeft: left,
                 duration: 0.5,
-                ease: "power2.out"
+                ease: 'power2.out'
             });
             info.value.x = left;
         }

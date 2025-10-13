@@ -1,11 +1,12 @@
 <script lang="ts">
 import { computed, defineComponent, onMounted, PropType, ref, toRef, watch } from 'vue';
+import EventHeader from './EventHeader.vue';
 import EventTitle from './EventTitle.vue';
 import { IEvents } from '../useEventCalendar';
 
 export default defineComponent({
     name: 'NCalendarContent',
-    components: { EventTitle },
+    components: { EventHeader, EventTitle },
     props: {
         // 排版模式
         gridType: {
@@ -19,19 +20,21 @@ export default defineComponent({
         events: {
             type: Array as PropType<Array<IEvents>>,
             default: () => []
+        },
+        stickyEnabled: {
+            type: Boolean,
+            default: false
         }
     },
     setup(props) {
         const activeDate = toRef(props, 'activeDate');
         const container = ref<HTMLElement | null>(null);
-        const currentDate = new Date('2024/06/09'); // 今天
-        const dayOfWeek = currentDate.getDay();
+        const currentDate = new Date('2025/02/02'); // 今天
         const daily = currentDate.getDate();
         const daysInMonth = computed(() => new Date(activeDate.value.getFullYear(), activeDate.value.getMonth() + 1, 0).getDate());
         const nextMonth = computed(() => new Date(activeDate.value.getFullYear(), activeDate.value.getMonth() + 2, 0).getDate());
         // 這個月的第一天是星期幾
         const firstDayOfMonth = computed(() => new Date(activeDate.value.getFullYear(), activeDate.value.getMonth(), 1).getDay());
-        const isWeekend = (day: number): boolean => ((firstDayOfMonth.value + (day - 1)) % 7 % 6) === 0;
         // 該月份是否為當月
         const isThisMonth = computed(() => currentDate.getMonth() === activeDate.value.getMonth()
             && currentDate.getFullYear() === activeDate.value.getFullYear());
@@ -45,8 +48,8 @@ export default defineComponent({
         // 活動該月結束
         const isContinuing = (endedTime: string) => {
             const time = new Date(endedTime);
-            const nextMonth: boolean = time.getMonth() + 1 === activeDate.value.getMonth() + 2;
-            const lastDay: boolean = nextMonth ? time.getDate() > (31 - daysInMonth.value) : true; // 超過該月份最後N天
+            const isNextMonth: boolean = time.getMonth() + 1 === activeDate.value.getMonth() + 2;
+            const lastDay: boolean = isNextMonth ? time.getDate() > (31 - daysInMonth.value) : true; // 超過該月份最後N天
             if (time.getFullYear() > activeDate.value.getFullYear()) return true;
             return (time.getMonth() > activeDate.value.getMonth() && lastDay);
         };
@@ -88,7 +91,6 @@ export default defineComponent({
             daily,
             daysInMonth,
             nextMonth,
-            isWeekend,
             isThisMonth,
             hasSmall,
             isContinued,
@@ -102,31 +104,13 @@ export default defineComponent({
 <template>
     <div class="calendar-content" ref="container">
         <!-- 日曆標題 -->
-        <div class="calendar-title">
-            <div class="days-in-month-scale">
-                <div
-                    v-for="i in daysInMonth"
-                    :key="i"
-                    :class="{
-                        weekend: isWeekend(i),
-                        active: i === daily && isThisMonth
-                    }"
-                >
-                    {{ i.toString().padStart(2, '0') }}
-                </div>
-                <!-- 填滿後面的日期 -->
-                <div
-                    v-for="i in 31 - daysInMonth"
-                    :key="i"
-                    :class="{
-                        weekend: isWeekend(i + daysInMonth),
-                    }"
-                    style="opacity: 10%;"
-                >
-                    {{ i.toString().padStart(2, '0') }}
-                </div>
-            </div>
-        </div>
+        <EventHeader
+            :class="{
+                'event-header-sticky': stickyEnabled
+            }"
+            :activeDate="activeDate"
+            :currentDate="currentDate"
+        />
         <!-- 日曆內容 -->
         <div class="calendar-wrap grid">
             <div
@@ -148,6 +132,7 @@ export default defineComponent({
                     <div
                         class="item"
                         :class="{
+                            'item': true,
                             'item-small': hasSmall,
                             'hidden': !event.calendar.checked,
                             'updated': event.isUpdate && !isContinued(event.startTime)
@@ -172,7 +157,7 @@ export default defineComponent({
                             :tag="event.coTag"
                             :link="event.link"
                             :color="event.color"
-                            :icon="event.area.span <= (2 + (event.coTag ? 1 : 0))"
+                            :icon="event.area.span <= 3"
                             :continued="isContinued(event.startTime)"
                             :continuing="isContinuing(event.endedTime)"
                             :updated="event.isUpdate"
@@ -199,56 +184,6 @@ export default defineComponent({
     max-width: calc(var(--days-in-month-scale-size) * var(--days-in-month, 32));
     flex-direction: column;
 }
-.calendar-title {
-    height: 63px;
-    flex-shrink: 0;
-    .days-in-month-scale {
-        display: flex;
-        flex-direction: row;
-        padding-left: calc(var(--days-in-month-scale-size)/2);
-        padding-top: 13px;
-        div {
-            width: var(--days-in-month-scale-size);
-            height: 42px;
-            font-size: 19px;
-            position: relative;
-            font-weight: 500;
-            color: #9F9F9F;
-            text-align: center;
-            z-index: 10;
-            cursor: default;
-            line-height: 25px;
-            flex-shrink: 0;
-        }
-        .weekend {
-            color: #F15624;
-        }
-        .active {
-            color: white;
-        }
-        .active:after {
-            content: '';
-            position: absolute;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background-color: #F15624;
-            left: 2px;
-            top: -19%;
-            z-index: -1;
-            animation: fade-out-in ease .2s;
-        }
-        @keyframes fade-out-in {
-            0% {
-                opacity: 0;
-            }
-            100% {
-                opacity: 1;
-            }
-        }
-    }
-}
-
 .calendar-wrap {
     &.grid {
         width: calc(var(--days-in-month-scale-size) * var(--days-in-month, 32));
@@ -329,6 +264,11 @@ export default defineComponent({
 
 }
 @media (max-width: 959px) {
+    .calendar-content {
+        .event-header-sticky {
+            display: none;
+        }
+    }
     .calendar-wrap {
         .grid-content {
 

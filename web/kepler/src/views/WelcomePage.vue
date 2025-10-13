@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import HelloWorld from "@/components/HelloWorld.vue";
-import { Button, DarkMode, Dropdown } from "@mono/ui";
+import { Button, DarkMode, DropdownIcon } from "../../../../packages/ui";
 import { add } from "@mono/utils";
-import Footer from "@/components/Footer.vue";
-import Header from "@/components/Header.vue";
 
 const openDaisyUI = () => {
   window.open("https://daisyui.com", "_blank");
@@ -11,17 +9,15 @@ const openDaisyUI = () => {
 </script>
 
 <template>
-  <Header />
   <div class="flex justify-center">
     <a href="https://vite.dev" target="_blank" class="flex justify-center">
       <img src="/vite.svg" class="logo" alt="Vite logo" />
     </a>
     <a href="https://vuejs.org/" target="_blank">
-      <img src="@/assets/vue.svg" class="logo vue" alt="Vue logo" />
+      <img src="../assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
     <a href=""><img class="logo" src="/prettier.svg" alt="" /></a>
   </div>
-  <div></div>
   <HelloWorld msg="Monorepo Project: Vite + Vue + Prettier"> </HelloWorld>
 
   <h1>Vue-Router + Pinia</h1>
@@ -32,17 +28,12 @@ const openDaisyUI = () => {
     <button class="btn" @click="openDaisyUI">DaisyUI 5.0</button>
   </div>
 
-  <Dropdown>這是下拉式選單</Dropdown>
-
+  <DropdownIcon>這是下拉式選單</DropdownIcon>
   <div class="p-6 text-center">
     <DarkMode data-theme="dark"></DarkMode>
   </div>
 
   <div class="mx-10 rounded-full bg-red-300 text-3xl font-bold underline">+ Tailwindcss CSS</div>
-  <div class="flex">
-    <RouterView />
-  </div>
-  <Footer></Footer>
 </template>
 
 <style scoped>
