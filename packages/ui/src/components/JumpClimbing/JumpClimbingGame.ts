@@ -6,6 +6,12 @@ export interface PlayerGraphics extends PIXI.Graphics {
     isJumping: boolean;
 }
 
+export interface BlockGraphics extends PIXI.Graphics {
+    vy: number;
+    isFalling: boolean;
+    canFall: boolean; // 修正拼字：用來標記方塊是否有落下功能
+}
+
 export interface GameState {
     score: number;
     isGameOver: boolean;
@@ -29,7 +35,7 @@ export class JumpClimbingGame {
     public app!: PIXI.Application;
     private gameContainer!: PIXI.Container;
     private player!: PlayerGraphics;
-    private blocks: PIXI.Graphics[] = [];
+    private blocks: BlockGraphics[] = [];
 
     // State
     private lastBlockSpawnTime = 0;
@@ -74,7 +80,7 @@ export class JumpClimbingGame {
 
     private setupInitialScene() {
         this.createPlayer();
-        this.createBlock(this.GAME_WIDTH / 2 - this.BLOCK_WIDTH / 2, this.GAME_HEIGHT - this.BLOCK_HEIGHT);
+        this.createBlock(this.GAME_WIDTH / 2 - this.BLOCK_WIDTH / 2, this.GAME_HEIGHT - this.BLOCK_HEIGHT, false);
     }
 
     private createPlayer() {
@@ -87,11 +93,14 @@ export class JumpClimbingGame {
         this.gameContainer.addChild(this.player);
     }
 
-    private createBlock(x: number, y: number): PIXI.Graphics {
-        const block = new PIXI.Graphics();
+    private createBlock(x: number, y: number, canFall: boolean = true): BlockGraphics {
+        const block = new PIXI.Graphics() as BlockGraphics;
         block.rect(0, 0, this.BLOCK_WIDTH, this.BLOCK_HEIGHT).fill(0x00ff00);
         block.x = x;
         block.y = y;
+        block.vy = 0;
+        block.isFalling = false;
+        block.canFall = canFall; // 設定是否有落下功能
         this.gameContainer.addChild(block);
         this.blocks.push(block);
         return block;
@@ -147,9 +156,37 @@ export class JumpClimbingGame {
     private update(delta: PIXI.Ticker) {
         if (this.state.isGameOver || !this.state.gameStarted) return;
 
+        // 1. 更新所有方塊的物理狀態 (如果正在掉落)
+        for (let i = 0; i < this.blocks.length; i++) {
+            const block = this.blocks[i];
+            if (block.canFall && block.isFalling) {
+                block.vy += this.GRAVITY;
+                block.y += block.vy;
+
+                // 堆疊判定：檢查是否掉落到其他方塊上
+                for (let j = 0; j < this.blocks.length; j++) {
+                    if (i === j) continue;
+                    const targetBlock = this.blocks[j];
+                    
+                    // 只有掉落到「不在掉落狀態」的方塊上才會堆疊
+                    if (!targetBlock.isFalling) {
+                        const isHorizontalOverlap = block.x < targetBlock.x + this.BLOCK_WIDTH && block.x + this.BLOCK_WIDTH > targetBlock.x;
+                        const isHittingTop = block.y + this.BLOCK_HEIGHT >= targetBlock.y && (block.y + this.BLOCK_HEIGHT - block.vy) <= targetBlock.y + 10;
+
+                        if (isHorizontalOverlap && isHittingTop) {
+                            block.isFalling = false;
+                            block.vy = 0;
+                            block.y = targetBlock.y - this.BLOCK_HEIGHT; // 精準對齊上方
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. 更新玩家物理狀態
         this.player.vy += this.GRAVITY;
         this.player.y += this.player.vy;
-
         this.playerOnGround = false;
         
         for (const block of this.blocks) {
@@ -164,12 +201,17 @@ export class JumpClimbingGame {
                 const isFallingOnto = this.player.vy > 0 && this.player.y >= block.y && (this.player.y - this.player.vy) <= block.y + 10;
 
                 if (isStandingOn || isFallingOnto) {
+                    // 當玩家在方塊上時，位置與方塊同步
                     this.player.y = block.y; 
-                    this.player.vy = 0;
+                    this.player.vy = block.vy; // 玩家垂直速度同步於方塊，達成一起掉落的效果
                     this.playerOnGround = true;
                     this.player.isJumping = false;
-                    // 當玩家接觸到方塊時，立即停止該方塊的動畫（使其停在當前位置）
-                    gsap.killTweensOf(block);
+
+                    // 啟動方塊的物理掉落
+                    if (block.canFall && !block.isFalling) {
+                        gsap.killTweensOf(block); // 停止水平滑動
+                        block.isFalling = true;
+                    }
                     continue;
                 }
             }
