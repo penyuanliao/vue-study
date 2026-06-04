@@ -1,26 +1,31 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import { JumpClimbingGame, type GameState } from './JumpClimbingGame';
+import { JumpClimbingGameV2 } from "@/components/JumpClimbing/JumpClimbingGameV2";
+import { JCPlayer } from "@/components/JumpClimbing/JCPlayer";
+
 
 const gameCanvasContainer = ref<HTMLDivElement | null>(null);
 const score = ref(0);
 const isGameOver = ref(false);
 const gameStarted = ref(false);
+const countdown = ref(0);
 
-let game: JumpClimbingGame;
+let game: JumpClimbingGameV2;
 
 function resetGame() {
     game?.reset();
 }
 
-const handleStateChange = (state: GameState) => {
+const handleStateChange = (state: any) => {
     score.value = state.score;
     isGameOver.value = state.isGameOver;
     gameStarted.value = state.gameStarted;
+    countdown.value = state.countdown;
 };
 
 onMounted(() => {
-    game = new JumpClimbingGame(handleStateChange);
+    game = new JumpClimbingGameV2(handleStateChange);
     if (gameCanvasContainer.value) {
         game.init(gameCanvasContainer.value);
     }
@@ -36,7 +41,7 @@ onUnmounted(() => {
         <h1>Jump Climbing</h1>
         <div class="score-display">Score: {{ score }}</div>
         <div ref="gameCanvasContainer" class="game-canvas-container"></div>
-        <div v-if="!gameStarted && !isGameOver" class="start-overlay" @click="gameStarted = true; game.state.gameStarted = true">
+        <div v-if="!gameStarted && !isGameOver" class="start-overlay" @click="gameStarted = true; game.start()">
             <h2>Ready?</h2>
             <p>Tap to Start Jumping!</p>
         </div>
