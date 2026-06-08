@@ -1,4 +1,4 @@
-import { Sprite, AnimatedSprite, Texture, Assets, Container } from "pixi.js";
+import { Sprite, AnimatedSprite, Texture, Assets, Container, Text, TextStyle } from "pixi.js";
 import { config } from "@/components/JumpClimbing/Config";
 import Matter from "matter-js";
 import { gsap } from "gsap";
@@ -65,7 +65,7 @@ export class JCPlayer extends Container {
         sprite.animationSpeed = 0.1;
         sprite.loop = false;
         sprite.onComplete = () => {
-            sprite.currentFrame = 0;
+            // sprite.currentFrame = 0;
         };
         return sprite;
     }
@@ -105,10 +105,12 @@ export class JCPlayer extends Container {
         gsap.killTweensOf(this.view.scale);
 
         const tl = gsap.timeline();
-        // 使用相對於 baseScale 的比例進行動畫
+        // // 使用相對於 baseScale 的比例進行動畫
         tl.to(this.view.scale, { x: this.baseScale.x * 1.4, y: this.baseScale.y * 0.6, duration: 0.05, ease: "power1.out" })   // 起跳擠壓
             .to(this.view.scale, { x: this.baseScale.x * 0.7, y: this.baseScale.y * 1.5, duration: 0.15, ease: "power2.out" })  // 騰空拉伸
-            .to(this.view.scale, { x: this.baseScale.x, y: this.baseScale.y, duration: 0.6, ease: "elastic.out(1, 0.3)" }); // 恢復基準比例
+            .to(this.view.scale, { x: this.baseScale.x, y: this.baseScale.y, duration: 0.6, ease: "elastic.out(1, 0.3)", onComplete: () => {
+                this.view.currentFrame = 0;
+                } }); // 恢復基準比例
     }
 
     fallout(bounceX: number) {
@@ -135,5 +137,52 @@ export class JCPlayer extends Container {
         this.x = this.body.position.x;
         this.y = this.body.position.y;
         this.rotation = this.body.angle;
+    }
+
+    /**
+     * 在玩家右側顯示加分文字，5秒後消失
+     * @param score 分數
+     */
+    public showFloatingScore(score: number) {
+        const style = new TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 28,
+            fontWeight: 'bold',
+            fill: '#FFD700', // 金色
+            stroke: '#000000',
+            strokeThickness: 4,
+        });
+
+        const scoreText = new Text({ text: `+${score}`, style });
+        
+        // 初始位置設定在玩家 view 的右側
+        // 因為 JCPlayer 本身就是 Container，所以加入 scoreText 會跟著玩家移動
+        scoreText.x = (this.view.width / 2) + 15;
+        scoreText.y = -10;
+        scoreText.alpha = 0;
+        scoreText.scale.set(0.5);
+
+        this.addChild(scoreText);
+
+        // 動畫 1：彈出顯示
+        gsap.to(scoreText, { 
+            alpha: 1, 
+            scale: 1, 
+            y: -30, 
+            duration: 0.4, 
+            ease: "back.out(2)" 
+        });
+
+        // 動畫 2：停留並在 5 秒時消失
+        gsap.to(scoreText, {
+            alpha: 0,
+            y: -60,
+            duration: 0.5,
+            delay: .5,
+            onComplete: () => {
+                this.removeChild(scoreText);
+                scoreText.destroy();
+            }
+        });
     }
 }

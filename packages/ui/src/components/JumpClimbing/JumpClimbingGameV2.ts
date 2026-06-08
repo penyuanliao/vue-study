@@ -335,12 +335,11 @@ export class JumpClimbingGameV2 {
             if (blockBody.slideTween) {
                 blockBody.slideTween.kill();
             }
-            this.updateScore();
-            // this.next();
         }
     }
     private updateScore() {
         this.updateState({ score: this.level -1 });
+        this.player.showFloatingScore(this.level -1);
     }
     // 下一個
     private next() {
