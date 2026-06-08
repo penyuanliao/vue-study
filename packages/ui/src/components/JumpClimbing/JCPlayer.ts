@@ -91,7 +91,7 @@ export class JCPlayer extends Container {
     jump() {
         if (this.isJumping) return;
 
-        this.isJumping = true;
+        // this.isJumping = true;
 
         this.play();
 
@@ -132,6 +132,8 @@ export class JCPlayer extends Container {
         Matter.Body.setAngularVelocity(this.body, bounceX * 0.05);
     }
     update() {
-
+        this.x = this.body.position.x;
+        this.y = this.body.position.y;
+        this.rotation = this.body.angle;
     }
 }

@@ -23,16 +23,31 @@ const handleStateChange = (state: any) => {
     gameStarted.value = state.gameStarted;
     countdown.value = state.countdown;
 };
+const handleKeyDown = (event: KeyboardEvent) => {
+    switch (event.key) {
+        case "ArrowUp":
+            break;
+        case "ArrowDown":
+            break;
+        case "ArrowLeft":
+            break;
+        case "ArrowRight":
+            break;
+        default:
+    }
+}
 
 onMounted(() => {
     game = new JumpClimbingGameV2(handleStateChange);
     if (gameCanvasContainer.value) {
         game.init(gameCanvasContainer.value);
     }
+    window.addEventListener("keydown", handleKeyDown);
 });
 
 onUnmounted(() => {
     game?.destroy();
+    window.removeEventListener("keydown", handleKeyDown);
 });
 </script>
 

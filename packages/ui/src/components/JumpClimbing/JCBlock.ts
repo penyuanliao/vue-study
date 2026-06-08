@@ -6,51 +6,69 @@ import { LoaderManager } from "./LoaderManager";
 
 export interface IMatterBody extends Matter.Body {
     slideTween?: gsap.core.Tween;
+    needFalling?: boolean;
 }
 export default class JCBlock extends Container {
 
     // public view: Sprite;
     public body: IMatterBody;
 
-    constructor() {
+    public isFrozen: boolean = false;
+
+    constructor(num: number = 1) {
         super();
-        this.createBlock();
-
+        this.createBlock(num);
     }
-    async createBlock() {
 
-        const TILE_SIZE = 32; // 定義目標尺寸為 32
+    async createBlock(num: number = 1) {
+        // 先清空舊的子物件
+        this.removeChildren();
+
+        const TILE_SIZE = 32;
         const assets = LoaderManager.getInstance();
-        // 現在可以使用 Assets.get(alias) 或是 Texture.from(alias) 來讀取
-        if (assets.has('grassLeft')) {
+
+        // 計算總寬度與起始偏移量，確保 (0,0) 是方塊的中心
+        const totalTiles = num + 2;
+        const totalWidth = totalTiles * TILE_SIZE;
+        const startX = -(totalWidth / 2) + (TILE_SIZE / 2);
+
+        // 1. 左側邊緣
+        const leftTex = assets.get('grassLeft');
+        if (leftTex) {
             const left = new Sprite({
-                texture: Assets.get('grassLeft'),
+                texture: leftTex,
                 width: TILE_SIZE,
                 height: TILE_SIZE,
                 anchor: 0.5,
-                x: -TILE_SIZE // 放在左邊 (-32)
+                x: startX
             });
             this.addChild(left);
         }
 
-        if (assets.has('grassMid')) {
-            const mid = new Sprite({
-                texture: Assets.get('grassMid'),
-                width: TILE_SIZE,
-                height: TILE_SIZE,
-                anchor: 0.5,
-                x: 0 // 放在中間 (0)
-            });
-            this.addChild(mid);
+        // 2. 中間區塊 (根據 num 數量重複)
+        const midTex = assets.get('grassMid');
+        if (midTex) {
+            for (let i = 0; i < num; i++) {
+                const mid = new Sprite({
+                    texture: midTex,
+                    width: TILE_SIZE,
+                    height: TILE_SIZE,
+                    anchor: 0.5,
+                    x: startX + (i + 1) * TILE_SIZE
+                });
+                this.addChild(mid);
+            }
         }
 
-        if (assets.has('grassRight')) {
+        // 3. 右側邊緣
+        const rightTex = assets.get('grassRight');
+        if (rightTex) {
             const right = new Sprite({
-                texture: Assets.get('grassRight'),
+                texture: rightTex,
                 width: TILE_SIZE,
                 height: TILE_SIZE,
                 anchor: 0.5,
-                x: TILE_SIZE // 放在右邊 (32)
+                x: startX + (num + 1) * TILE_SIZE
             });
             this.addChild(right);
         }
@@ -70,11 +88,13 @@ export default class JCBlock extends Container {
                 restitution: 0,    // 保持 0，確保完全不反彈（像硬木頭）
                 density: 0.001,
                 frictionStatic: 1, // 增加靜態摩擦力，讓堆疊更穩
-                frictionAir: 0.01,  // 大幅降低空氣阻力，消除果凍漂浮感
-                isStatic: true, // 無重力無碰撞
+                frictionAir: 0.0,  // 大幅降低空氣阻力，消除果凍漂浮感
+                isStatic: false, // 無重力無碰撞
+                gravityScale: { x: 0, y: 0 },
                 label: 'block',
             }
         );
+        this.isFrozen = true;
         Matter.Composite.add(world, this.body);
     }
     slideIn(startX: number, targetX: number, duration: number = 2) {
@@ -90,6 +110,22 @@ export default class JCBlock extends Container {
                 Matter.Body.setPosition(this.body, { x: animPos.x, y: this.body.position.y });
             },
         });
+    }
+    public update() {
+        const { body } = this;
+
+        // 要讓他懸空
+        if (this.isFrozen) {
+            body.force.x = 0;
+            body.force.y = 0;
+            body.torque = 0;
+            Matter.Body.setVelocity(body, { x: 0, y: -0.2 });
+            Matter.Body.setAngularVelocity(body, 0);
+        }
+
+        this.x = this.body.position.x;
+        this.y = this.body.position.y;
+        this.rotation = this.body.angle;
     }
 
 }

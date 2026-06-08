@@ -1,5 +1,4 @@
 import * as PIXI from "pixi.js";
-import { Graphics } from "pixi.js";
 import { gsap } from "gsap";
 import Matter from "matter-js";
 import { JCPlayer } from "./JCPlayer";
@@ -7,6 +6,7 @@ import JCBlock from "./JCBlock";
 import { LoaderManager } from "./LoaderManager";
 import JCGround from "./JCGround";
 import CountDownTimer from "./HUD/CountDownTimer";
+import Camera from "./Camera/Camera";
 
 export interface BlockGraphics extends PIXI.Graphics {
     vy: number;
@@ -47,6 +47,8 @@ export class JumpClimbingGameV2 {
     private gameContainer!: PIXI.Container;
     private debugGraphics!: PIXI.Graphics; // 用於除錯顯示
 
+    private camera!: Camera;
+
     // private player!: { body: Matter.Body, graphics: any };
     private player!: JCPlayer;
 
@@ -55,7 +57,7 @@ export class JumpClimbingGameV2 {
 
     private spawnTimer: gsap.core.Tween | null = null;
 
-    private blockPairs: { body: Matter.Body, graphics: BlockGraphics }[] = [];
+    private blockPairs: JCBlock[] = [];
 
     public state: IGameState = {
         score: 0,
@@ -95,6 +97,9 @@ export class JumpClimbingGameV2 {
 
         this.gameContainer = new PIXI.Container();
         this.app.stage.addChild(this.gameContainer);
+
+        this.camera = new Camera(this.GAME_WIDTH, this.GAME_HEIGHT);
+        this.camera.setViewPort(this.gameContainer);
 
         // 初始化倒數計時器 HUD (直接加在 stage 上，不隨 gameContainer 移動)
         this.timerHUD = new CountDownTimer();
@@ -159,7 +164,7 @@ export class JumpClimbingGameV2 {
 
     }
 
-    private createBlock() {
+    private createBlock(targetX: number = this.GAME_WIDTH / 2) {
         const side = this.level % 2 ? 'left' : 'right';
         // const startX = this.GAME_WIDTH / 2;
         const startX = side === 'left' ? -this.GAME_WIDTH : this.GAME_WIDTH;
@@ -167,24 +172,17 @@ export class JumpClimbingGameV2 {
         // 將起始位置改到地面上方
         const startY = this.ground.y + this.PLAYER_SIZE / 2 - this.BLOCK_HEIGHT / 2 - this.level * this.BLOCK_HEIGHT - padding;
 
-        const x = startX;
-        const y = startY;
-
-        const graphics = new JCBlock();
-        // 修正這裡的變數名稱錯誤 (graphics 而不是 graphic)
-        this.gameContainer.addChild(graphics);
-
-        graphics.setupPhysics(this.world, { x: startX, y: startY });
+        const block = new JCBlock();
+        block.setupPhysics(this.world, { x: startX, y: startY });
+        this.gameContainer.addChild(block);
 
         // 初始同步位置，這樣即使 update 還沒跑也能看到方塊
-        graphics.x = startX;
-        graphics.y = startY;
+        block.x = startX;
+        block.y = startY;
 
-        const targetX = this.GAME_WIDTH / 2;
+        block.slideIn(startX, targetX);
 
-        graphics.slideIn(startX, targetX);
-
-        return graphics;
+        return block;
     }
 
     private async createPlayer() {
@@ -212,28 +210,18 @@ export class JumpClimbingGameV2 {
 
     private syncPhysicsToGraphics() {
         // 將物理座標拷貝到 PixiJS 視覺物件上
+        // 在 afterUpdate 事件中
+        let i = 0;
         for (const pair of this.blockPairs) {
-            pair.x = pair.body.position.x;
-            pair.y = pair.body.position.y;
-            pair.rotation = pair.body.angle;
+            pair.update();
         }
         if (this.player) {
             // 同步player位置
-            this.player.x = this.player.body.position.x;
-            this.player.y = this.player.body.position.y;
-            this.player.rotation = this.player.body.angle;
+            this.player.update();
         }
-        this.cameraFollow();
+        // 相機跟隨
+        this.camera.focus(this.player);
     }
-    // 相機跟隨
-    private cameraFollow() {
-        const playerScreenY = this.player.y + this.gameContainer.y;
-        if (playerScreenY < this.GAME_HEIGHT * 0.4) {
-            const scrollAmount = (this.GAME_HEIGHT * 0.4) - playerScreenY;
-            this.gameContainer.y += scrollAmount * 0.1;
-        }
-    }
-
     /**
      * 開始定時生成方塊
      */
@@ -254,7 +242,10 @@ export class JumpClimbingGameV2 {
 
         this.spawnTimer = gsap.delayedCall(this.SPAWN_INTERVAL, spawn);
     }
-
+    /**
+     * 停止定時生成方塊
+     * @private
+     */
     private stopSpawnTimer() {
         if (this.spawnTimer) {
             this.spawnTimer.kill();
@@ -268,7 +259,7 @@ export class JumpClimbingGameV2 {
         this.stopSpawnTimer();
 
         if (this.player) {
-            const bounceX = collisionNormal ? (collisionNormal.x > 0 ? -10 : 10) : (Math.random() > 0.5 ? 10 : -10);
+            const bounceX = collisionNormal ? (collisionNormal.x < 0 ? -10 : 10) : (Math.random() < 0.5 ? 10 : -10);
             this.player.fallout(bounceX);
         }
     }
@@ -322,6 +313,9 @@ export class JumpClimbingGameV2 {
                     // 根據你的回饋：bodyA 是 player 且在上面時 dot 為 -1
                     if (dot < -0.5) isSteppingOn = true;
                 }
+                if (bodyB.label === "block") {
+                    bodyB.needFalling = true;
+                }
 
                 if (isSteppingOn) {
                     this.handleCollision(pair);
@@ -336,7 +330,7 @@ export class JumpClimbingGameV2 {
     private handleCollision(pair: Matter.IPair) {
         const { bodyA, bodyB } = pair;
         const blockBody = (bodyA.label === "block" ? bodyA : bodyB);
-        if (blockBody && blockBody.isStatic) {
+        if (blockBody) {
             // 1.停止方塊 GSAP 位移
             if (blockBody.slideTween) {
                 blockBody.slideTween.kill();
@@ -348,21 +342,22 @@ export class JumpClimbingGameV2 {
     private updateScore() {
         this.updateState({ score: this.level -1 });
     }
+    // 下一個
     private next() {
         if (this.state.isGameOver) return;
-        console.log("next");
 
         this.level++;
 
         this.blockPairs.push(this.createBlock());
         this.updateScore();
     }
+    // 開始遊戲
     public start() {
         this.updateState({ gameStarted: true, countdown: 10 });
         this.startSpawnTimer();
         this.blockPairs.push(this.createBlock());
     }
-
+    // 結束遊戲
     public reset() {
         // 必須清除物理世界中的所有 Composite（身體、約束等）
         Matter.World.clear(this.world, false);
